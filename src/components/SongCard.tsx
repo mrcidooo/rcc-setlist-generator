@@ -28,6 +28,9 @@ type SongCardProps = {
 };
 
 export const SongCard = ({ song, onPreview, onDelete }: SongCardProps) => {
+  // Ensure tags is always an array to avoid runtime errors
+  const tagsArray = Array.isArray(song.tags) ? song.tags : [];
+
   return (
     <Card className="flex h-full flex-col overflow-hidden shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="space-y-3">
@@ -65,9 +68,9 @@ export const SongCard = ({ song, onPreview, onDelete }: SongCardProps) => {
           </div>
         </div>
 
-        {song.tags.length > 0 ? (
+        {tagsArray.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {song.tags.map((tag) => (
+            {tagsArray.map((tag) => (
               <Badge key={tag} variant="secondary">
                 {tag}
               </Badge>
