@@ -34,9 +34,6 @@ export default function SingerKeyPreferences() {
 
   const { toast } = useToast();
 
-  // -----------------------------------------------------------------
-  // Load singers, songs, and the persisted matrix from Supabase
-  // -----------------------------------------------------------------
   useEffect(() => {
     const loadSupabaseData = async () => {
       // Load singers
@@ -61,19 +58,22 @@ export default function SingerKeyPreferences() {
         setSongs(songsData);
       }
 
-      // Load matrix from Supabase (single‑row table `key_matrix`)
-      const { data: matrixData, error: matrixError } = await supabase
-        .from("key_matrix")
-        .select("matrix")
-        .eq("id", "global") // we use a constant id to keep a single row
-        .single();
-
-      if (matrixError && matrixError.code !== "PGRST116") {
-        // PGRST116 = “No rows found” – ignore, start with empty matrix
-        console.error("Error loading key matrix:", matrixError);
-      } else if (matrixData && matrixData.matrix) {
-        // Supabase returns JSON as plain object, just set it
-        setSingerKeyData(matrixData.matrix as Record<string, Record<string, string>>);
+      // Load matrix data from localStorage if exists to preserve user entries
+      const storedMatrix = localStorage.getItem("vocal_key_matrix");
+      if (storedMatrix) {
+        try {
+          const parsed = JSON.parse(storedMatrix);
+          const normalized: Record<string, Record<string, string>> = {};
+          Object.keys(parsed).forEach((songId) => {
+            normalized[songId] = {};
+            Object.keys(parsed[songId]).forEach((singerId) => {
+              normalized[songId][singerId] = String(parsed[songId][singerId] || "");
+            });
+          });
+          setSingerKeyData(normalized);
+        } catch (e) {
+          console.error("Error parsing stored keys matrix:", e);
+        }
       }
     };
 
@@ -95,27 +95,8 @@ export default function SingerKeyPreferences() {
     setSingerKeyData(updated);
   };
 
-  // -----------------------------------------------------------------
-  // Save matrix → Supabase (upsert a single row)
-  // -----------------------------------------------------------------
-  const handleSaveMatrix = async () => {
-    const payload = {
-      id: "global", // constant primary key so we always upsert the same row
-      matrix: singerKeyData,
-    };
-
-    const { error } = await supabase.from("key_matrix").upsert(payload, {
-      onConflict: "id",
-    });
-
-    if (error) {
-      toast({
-        title: "Matrix save failed",
-        description: error.message,
-      });
-      return;
-    }
-
+  const handleSaveMatrix = () => {
+    localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
     toast({
       title: "Matrix Saved Successfully",
       description: "Comfort key preferences have been stored for all team vocalists.",
@@ -180,7 +161,6 @@ export default function SingerKeyPreferences() {
         </p>
       </div>
 
-      {/* ---------- Singers ---------- */}
       <section id="singers" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
           <CardHeader className="pb-3">
@@ -234,7 +214,6 @@ export default function SingerKeyPreferences() {
         </Card>
       </section>
 
-      {/* ---------- Songs ---------- */}
       <section id="songs" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
           <CardHeader className="pb-3">
@@ -288,7 +267,6 @@ export default function SingerKeyPreferences() {
         </Card>
       </section>
 
-      {/* ---------- Interactive Matrix ---------- */}
       <section id="comfortable-keys" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75 overflow-hidden">
           <CardHeader className="pb-4">
@@ -346,9 +324,7 @@ export default function SingerKeyPreferences() {
                           <td key={`${song.id}-${singer.id}`} className="px-6 py-4 text-center">
                             <Input
                               value={getKeyForSinger(song.id, singer.id)}
-                              onChange={(event) =>
-                                handleKeyChange(song.id, singer.id, event.target.value)
-                              }
+                              onChange={(event) => handleKeyChange(song.id, singer.id, event.target.value)}
                               className="h-10 w-16 text-center font-extrabold text-indigo-500 dark:text-indigo-400 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl focus:border-indigo-500 inline-block"
                               placeholder="-"
                             />
