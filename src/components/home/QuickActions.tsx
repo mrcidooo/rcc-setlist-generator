@@ -23,7 +23,7 @@ export const QuickActions = ({ actions, onAction }: Props) => (
         <Button
           key={idx}
           type="button"
-          className={`${action.color} h-20 flex-col gap-2 text-white`}
+          className={`${action.color} h-20 flex-col gap-2 text-white transition-transform duration-200 hover:scale-105`}
           onClick={() => onAction(action.action)}
         >
           <Icon className="h-6 w-6" />

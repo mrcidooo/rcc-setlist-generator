@@ -36,7 +36,10 @@ export const DashboardStats = ({
       {stats.map((stat, idx) => {
         const Icon = stat.icon;
         return (
-          <Card key={idx} className="border-0 shadow-md">
+          <Card
+            key={idx}
+            className="border-0 shadow-md transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl"
+          >
             <CardContent className="p-4 text-center">
               <Icon className={`mx-auto mb-2 h-8 w-8 ${stat.color}`} />
               <div className="text-2xl font-bold">{stat.value}</div>

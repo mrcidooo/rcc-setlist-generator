@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Users } from "lucide-react";
 import { type Singer } from "@/pages/Index";
 
 type Props = {
@@ -16,7 +15,10 @@ export const TeamMembers = ({ singers, getLabel }: Props) => (
     </h2>
     <div className="space-y-3">
       {singers.slice(0, 3).map((singer) => (
-        <Card key={singer.id} className="border-0 shadow-sm">
+        <Card
+          key={singer.id}
+          className="border-0 shadow-sm transition-shadow duration-200 hover:shadow-md"
+        >
           <CardContent className="p-3">
             <div className="font-medium text-gray-900 dark:text-white">
               {singer.name}

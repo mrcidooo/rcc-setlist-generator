@@ -3,9 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
-type Props = {
-  // In a real app you would pass actual recent songs; placeholder for now
-};
+type Props = {};
 
 export const RecentSongs = (props: Props) => (
   <section className="mb-6">
@@ -14,7 +12,10 @@ export const RecentSongs = (props: Props) => (
     </h2>
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="border-0 shadow-sm">
+        <Card
+          key={i}
+          className="border-0 shadow-sm transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
+        >
           <CardContent className="flex items-center justify-between p-3">
             <div>
               <div className="font-medium">Amazing Grace</div>
