@@ -26,6 +26,17 @@ import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
 
+const mapSong = (record: any): Song => ({
+  id: record.id,
+  title: record.title,
+  originalKey: record.original_key || record.originalKey || "",
+  tempo: record.tempo ?? "",
+  tags: record.tags || [],
+  addedAt: record.created_at || record.added_at || record.addedAt || "",
+  notes: record.notes ?? "",
+  lyrics: record.lyrics ?? "",
+});
+
 export default function Songs() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,21 +54,21 @@ export default function Songs() {
 
   const { toast } = useToast();
 
+  const fetchSongs = async () => {
+    const { data, error } = await supabase.from("songs").select("*");
+    if (error) {
+      toast({ title: "Failed to load songs", description: error.message });
+      return;
+    }
+
+    const supabaseSongs = (data ?? []).map(mapSong);
+    const stored = localStorage.getItem("uploadedSongs");
+    const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
+
+    setSongs([...uploadedSongs, ...supabaseSongs]);
+  };
+
   useEffect(() => {
-    const fetchSongs = async () => {
-      const { data, error } = await supabase.from("songs").select("*");
-      if (error) {
-        toast({ title: "Failed to load songs", description: error.message });
-        return;
-      }
-
-      const supabaseSongs = (data as Song[]) ?? [];
-      const stored = localStorage.getItem("uploadedSongs");
-      const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
-
-      setSongs([...uploadedSongs, ...supabaseSongs]);
-    };
-
     fetchSongs();
 
     const subscription = supabase
@@ -118,6 +129,7 @@ export default function Songs() {
 
     const payload = {
       title: form.title.trim(),
+      original_key: form.originalKey.trim(),
       originalKey: form.originalKey.trim(),
       tempo: form.tempo.trim(),
       tags: parsedTags,
@@ -138,7 +150,7 @@ export default function Songs() {
 
       setSongs((cur) =>
         cur.map((s) =>
-          s.id === editingSong.id ? { ...s, ...payload, addedAt: s.addedAt } : s,
+          s.id === editingSong.id ? { ...s, ...payload, originalKey: form.originalKey, addedAt: s.addedAt } : s,
         ),
       );
       toast({ title: "Song updated", description: `${payload.title} updated.` });
@@ -150,7 +162,7 @@ export default function Songs() {
         return;
       }
 
-      setSongs((cur) => [...(data as Song[]), ...cur]);
+      setSongs((cur) => [mapSong(data?.[0]), ...cur]);
       toast({ title: "Song added", description: `${payload.title} added.` });
     }
 

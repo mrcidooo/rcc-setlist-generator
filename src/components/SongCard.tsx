@@ -19,6 +19,7 @@ export type Song = {
   tags: string[];
   addedAt: string;
   notes?: string;
+  lyrics?: string;
 };
 
 type SongCardProps = {
