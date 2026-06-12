@@ -56,30 +56,11 @@ export default function AddSetlistSongForm({
   songs,
   singers,
 }: AddSetlistSongFormProps) {
-  // Local state for the searchable input
-  const [songInput, setSongInput] = useState("");
+  // Local state for the searchable input (kept for notes field)
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync input with selected song (when editing)
-  useEffect(() => {
-    const selected = songs.find((s) => s.id === formData.songId);
-    setSongInput(selected?.title ?? "");
-  }, [formData.songId, songs]);
-
-  // Filter songs based on the current input
-  const filteredSongs = songs.filter((s) =>
-    s.title.toLowerCase().includes(songInput.toLowerCase()),
-  );
-
-  // When user picks a suggestion
-  const pickSong = (song: Song) => {
-    setSongInput(song.title);
-    onSongChange(song.id);
-    setShowSuggestions(false);
-  };
-
-  // Close suggestions when clicking outside
+  // Close suggestions when clicking outside (kept for future extensions)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -105,35 +86,23 @@ export default function AddSetlistSongForm({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Song selector – custom searchable dropdown */}
-          <div className="space-y-1.5" ref={containerRef}>
+          {/* Song selector – reliable Select component */}
+          <div className="space-y-1.5">
             <Label htmlFor="setlist-song" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
               Song *
             </Label>
-            <Input
-              id="setlist-song"
-              value={songInput}
-              placeholder="Type to search songs..."
-              onChange={(e) => {
-                setSongInput(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-            />
-            {showSuggestions && filteredSongs.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-[12px] border border-black/10 dark:border-white/10 bg-white/95 dark:bg-card/95 shadow-lg">
-                {filteredSongs.map((song) => (
-                  <li
-                    key={song.id}
-                    onClick={() => pickSong(song)}
-                    className="px-4 py-2 cursor-pointer hover:bg-indigo-500/10"
-                  >
+            <Select value={formData.songId} onValueChange={onSongChange}>
+              <SelectTrigger id="setlist-song" className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10">
+                <SelectValue placeholder="Select a song" />
+              </SelectTrigger>
+              <SelectContent className="rounded-[18px] max-h-60 overflow-y-auto">
+                {songs.map((song) => (
+                  <SelectItem key={song.id} value={song.id} className="rounded-xl">
                     {song.title} <span className="text-xs text-muted-foreground">({song.originalKey})</span>
-                  </li>
+                  </SelectItem>
                 ))}
-              </ul>
-            )}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Singer selector – unchanged dropdown */}
@@ -145,7 +114,7 @@ export default function AddSetlistSongForm({
               <SelectTrigger id="setlist-singer" className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10">
                 <SelectValue placeholder="Select a singer" />
               </SelectTrigger>
-              <SelectContent className="rounded-[18px]">
+              <SelectContent className="rounded-[18px] max-h-60 overflow-y-auto">
                 {singers.map((singer) => (
                   <SelectItem key={singer.id} value={singer.id} className="rounded-xl">
                     {singer.name}
