@@ -1,391 +1,536 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Calendar, FileText, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowDown,
+  ArrowUp,
+  Calendar,
+  FileText,
+  ListMusic,
+  Music,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
+
+type SetlistSong = {
+  id: string;
+  songId: string;
+  songTitle: string;
+  singerId: string;
+  singerName: string;
+  selectedKey: string;
+  originalKey: string;
+  notes: string;
+  order: number;
+};
+
+type Setlist = {
+  id: string;
+  name: string;
+  date: string;
+  serviceType: "Sunday Worship" | "Wednesday Prayer Meeting" | "Special Event" | "Youth Service";
+  songs: SetlistSong[];
+};
+
+const availableSongs = [
+  { id: "1", title: "Way Maker", originalKey: "D" },
+  { id: "2", title: "Goodness of God", originalKey: "G" },
+  { id: "3", title: "What A Beautiful Name", originalKey: "D" },
+  { id: "4", title: "Reckless Love", originalKey: "G" },
+  { id: "5", title: "Gratitude", originalKey: "A" },
+];
+
+const availableSingers = [
+  { id: "1", name: "John Smith" },
+  { id: "2", name: "Sarah Johnson" },
+  { id: "3", name: "Mike Davis" },
+];
+
+const serviceTypes = [
+  "Sunday Worship",
+  "Wednesday Prayer Meeting",
+  "Special Event",
+  "Youth Service",
+] as const;
+
+const keyMatrix: Record<string, Record<string, string>> = {
+  "1": { "1": "D", "2": "F", "3": "C" },
+  "2": { "1": "G", "2": "B", "3": "E" },
+  "3": { "1": "D", "2": "F#", "3": "B" },
+  "4": { "1": "G", "2": "B", "3": "D" },
+  "5": { "1": "A", "2": "C#", "3": "F#" },
+};
 
 export default function Setlists() {
-  const [setlist, setSetlist] = useState({
+  const [setlist, setSetlist] = useState<Setlist>({
     id: "1",
     name: "",
     date: "",
-    serviceType: "Sunday Worship" as const,
-    songs: [] as Array<{
-      songId: string;
-      songTitle: string;
-      singerId: string;
-      singerName: string;
-      selectedKey: string;
-      notes: string;
-      order: number;
-    }>
+    serviceType: "Sunday Worship",
+    songs: [],
   });
 
-  const [availableSongs] = useState<Array<{id: string; title: string; originalKey: string}>>([
-    { id: "1", title: "Way Maker", originalKey: "D" },
-    { id: "2", title: "Goodness of God", originalKey: "G" },
-    { id: "3", title: "What A Beautiful Name", originalKey: "D" },
-    { id: "4", title: "Reckless Love", originalKey: "G" },
-    { id: "5", title: "Gratitude", originalKey: "A" }
-  ]);
-
-  const [availableSingers] = useState<Array<{id: string; name: string}>>([
-    { id: "1", name: "John Smith" },
-    { id: "2", name: "Sarah Johnson" },
-    { id: "3", name: "Mike Davis" }
-  ]);
-
-  // Sample key matrix for recommendations
-  const keyMatrix: Record<string, Record<string, string>> = {
-    "1": { "1": "D", "2": "F", "3": "C" },
-    "2": { "1": "G", "2": "B", "3": "E" },
-    "3": { "1": "D", "2": "F#", "3": "B" },
-    "4": { "1": "G", "2": "B", "3": "D" },
-    "5": { "1": "A", "2": "C#", "3": "F#" }
-  };
-
   const [formData, setFormData] = useState({
-    songId: "" as string,
-    singerId: "" as string,
-    notes: ""
+    songId: "",
+    singerId: "",
+    selectedKey: "",
+    notes: "",
   });
 
   const [isAddingSong, setIsAddingSong] = useState(false);
+  const { toast } = useToast();
 
-  const handleSetlistChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setSetlist(prev => ({
-      ...prev,
-      [name]: value
+  const getRecommendedKey = (songId: string, singerId: string) => {
+    return keyMatrix[songId]?.[singerId] ?? "";
+  };
+
+  const handleSetlistChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { name, value } = event.target;
+    setSetlist((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSongFormChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSongChange = (value: string) => {
+    const song = availableSongs.find((item) => item.id === value);
+    const recommendedKey = formData.singerId
+      ? getRecommendedKey(value, formData.singerId)
+      : "";
+
+    setFormData((current) => ({
+      ...current,
+      songId: value,
+      selectedKey: recommendedKey || song?.originalKey || "",
     }));
   };
 
-  const handleSongFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const handleSingerChange = (value: string) => {
+    const recommendedKey = formData.songId
+      ? getRecommendedKey(formData.songId, value)
+      : "";
 
-  const getRecommendedKey = (songId: string, singerId: string): string => {
-    return keyMatrix[songId]?.[singerId] || "";
+    setFormData((current) => ({
+      ...current,
+      singerId: value,
+      selectedKey: recommendedKey || current.selectedKey,
+    }));
   };
 
   const handleAddSong = () => {
-    if (!formData.songId || !formData.singerId) return;
+    if (!formData.songId || !formData.singerId) {
+      toast({
+        title: "Song not added",
+        description: "Please select both a song and a singer.",
+      });
+      return;
+    }
 
-    const song = availableSongs.find(s => s.id === formData.songId);
-    const singer = availableSingers.find(s => s.id === formData.singerId);
-    
+    const song = availableSongs.find((item) => item.id === formData.songId);
+    const singer = availableSingers.find((item) => item.id === formData.singerId);
+
     if (!song || !singer) return;
 
-    const newSongEntry = {
+    const newSongEntry: SetlistSong = {
       id: Date.now().toString(),
       songId: song.id,
       songTitle: song.title,
       singerId: singer.id,
       singerName: singer.name,
-      selectedKey: getRecommendedKey(song.id, singer.id) || song.originalKey,
-      notes: formData.notes,
-      order: setlist.songs.length + 1
+      selectedKey: formData.selectedKey || getRecommendedKey(song.id, singer.id) || song.originalKey,
+      originalKey: song.originalKey,
+      notes: formData.notes.trim(),
+      order: setlist.songs.length + 1,
     };
 
-    setSetlist(prev => ({
-      ...prev,
-      songs: [...prev.songs, newSongEntry]
+    setSetlist((current) => ({
+      ...current,
+      songs: [...current.songs, newSongEntry],
     }));
 
     setFormData({
       songId: "",
       singerId: "",
-      notes: ""
+      selectedKey: "",
+      notes: "",
     });
     setIsAddingSong(false);
+
+    toast({
+      title: "Song added",
+      description: `${song.title} was added to the setlist.`,
+    });
   };
 
   const handleRemoveSong = (id: string) => {
-    setSetlist(prev => ({
-      ...prev,
-      songs: prev.songs.filter(song => song.id !== id)
+    setSetlist((current) => ({
+      ...current,
+      songs: current.songs
+        .filter((song) => song.id !== id)
+        .map((song, index) => ({ ...song, order: index + 1 })),
     }));
   };
 
-  const handleMoveUp = (id: string) => {
-    setSetlist(prev => {
-      const songs = [...prev.songs];
-      const index = songs.findIndex(song => song.id === id);
-      if (index > 0) {
-        [songs[index], songs[index-1]] = [songs[index-1], songs[index]];
-        // Update order numbers
-        songs.forEach((song, idx) => {
-          song.order = idx + 1;
-        });
+  const moveSong = (id: string, direction: "up" | "down") => {
+    setSetlist((current) => {
+      const songs = [...current.songs];
+      const index = songs.findIndex((song) => song.id === id);
+      const nextIndex = direction === "up" ? index - 1 : index + 1;
+
+      if (index < 0 || nextIndex < 0 || nextIndex >= songs.length) {
+        return current;
       }
-      return { ...prev, songs };
+
+      [songs[index], songs[nextIndex]] = [songs[nextIndex], songs[index]];
+
+      return {
+        ...current,
+        songs: songs.map((song, songIndex) => ({
+          ...song,
+          order: songIndex + 1,
+        })),
+      };
     });
   };
 
-  const handleMoveDown = (id: string) => {
-    setSetlist(prev => {
-      const songs = [...prev.songs];
-      const index = songs.findIndex(song => song.id === id);
-      if (index < songs.length - 1) {
-        [songs[index], songs[index+1]] = [songs[index+1], songs[index]];
-        // Update order numbers
-        songs.forEach((song, idx) => {
-          song.order = idx + 1;
-        });
-      }
-      return { ...prev, songs };
+  const handleSaveSetlist = () => {
+    if (!setlist.name.trim() || !setlist.date) {
+      toast({
+        title: "Setlist not saved",
+        description: "Please add a setlist name and date.",
+      });
+      return;
+    }
+
+    if (setlist.songs.length === 0) {
+      toast({
+        title: "Setlist not saved",
+        description: "Add at least one song before saving.",
+      });
+      return;
+    }
+
+    toast({
+      title: "Setlist saved",
+      description: `${setlist.name} was saved with ${setlist.songs.length} songs.`,
     });
   };
 
   const handleGeneratePDF = () => {
-    // In a real app, this would generate and download a PDF
-    alert("PDF generation would happen here in a real implementation!\n\n" +
-          `Setlist: ${setlist.name}\n` +
-          `Date: ${setlist.date}\n` +
-          `Service Type: ${setlist.serviceType}\n` +
-          `Songs: ${setlist.songs.length}`);
+    if (!setlist.name.trim() || !setlist.date || setlist.songs.length === 0) {
+      toast({
+        title: "PDF not generated",
+        description: "Complete the setlist details and add songs first.",
+      });
+      return;
+    }
+
+    toast({
+      title: "PDF ready",
+      description: "Your setlist PDF would be generated here.",
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Setlist Builder</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Create and manage worship setlists with automatic key recommendations
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Setlist Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Setlist Name *</label>
-              <Input
-                value={setlist.name}
-                onChange={handleSetlistChange}
-                name="name"
-                placeholder="Enter setlist name"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Date *</label>
-              <Input
-                type="date"
-                value={setlist.date}
-                onChange={handleSetlistChange}
-                name="date"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Service Type *</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select service type">
-                    {setlist.serviceType}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sunday Worship">Sunday Worship</SelectItem>
-                  <SelectItem value="Wednesday Prayer Meeting">Wednesday Prayer Meeting</SelectItem>
-                  <SelectItem value="Special Event">Special Event</SelectItem>
-                  <SelectItem value="Youth Service">Youth Service</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2">
-              <Button 
-                variant="outline"
-                onClick={() => setIsAddingSong(true)}
-                className="w-full"
-              >
-                <Plus className="mr-2" /> Add Song to Setlist
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background p-4 pb-28">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Setlist Builder
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create worship setlists with singer-specific key recommendations.
+            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Add Song Form */}
-      {isAddingSong && (
-        <Card className="mb-6">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{setlist.songs.length} songs</Badge>
+            <Badge variant="outline">{setlist.serviceType}</Badge>
+          </div>
+        </header>
+
+        <Card>
           <CardHeader>
-            <CardTitle>Add Song to Setlist</CardTitle>
+            <CardTitle>Setlist Details</CardTitle>
+            <CardDescription>
+              Add the service information before building your song order.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleAddSong();
-            }}>
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Select Song *</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a song">
-                      {formData.songId ? 
-                        availableSongs.find(s => s.id === formData.songId)?.title || "" : 
-                        "Select a song"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSongs.map(song => (
-                      <SelectItem key={song.id} value={song.id}>
-                        {song.title} ({song.originalKey})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Select Singer *</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a singer">
-                      {formData.singerId ? 
-                        availableSingers.find(s => s.id === formData.singerId)?.name || "" : 
-                        "Select a singer"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSingers.map(singer => (
-                      <SelectItem key={singer.id} value={singer.id}>
-                        {singer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={handleSongFormChange}
-                  name="notes"
-                  placeholder="Any special instructions for this song"
-                  rows={3}
+                <Label htmlFor="setlist-name">Setlist Name *</Label>
+                <Input
+                  id="setlist-name"
+                  name="name"
+                  value={setlist.name}
+                  onChange={handleSetlistChange}
+                  placeholder="e.g., Sunday Worship"
                 />
               </div>
-              
-              <div className="flex justify-end space-x-3">
-                <Button 
-                  variant="ghost" 
+
+              <div>
+                <Label htmlFor="setlist-date">Date *</Label>
+                <Input
+                  id="setlist-date"
+                  name="date"
+                  type="date"
+                  value={setlist.date}
+                  onChange={handleSetlistChange}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="service-type">Service Type *</Label>
+                <Select
+                  value={setlist.serviceType}
+                  onValueChange={(value) =>
+                    setSetlist((current) => ({
+                      ...current,
+                      serviceType: value as Setlist["serviceType"],
+                    }))
+                  }
+                >
+                  <SelectTrigger id="service-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((serviceType) => (
+                      <SelectItem key={serviceType} value={serviceType}>
+                        {serviceType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setIsAddingSong((current) => !current)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {isAddingSong ? "Hide Song Form" : "Add Song to Setlist"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {isAddingSong && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Song to Setlist</CardTitle>
+              <CardDescription>
+                Select a song and singer. The recommended key will appear
+                automatically when available.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="setlist-song">Song *</Label>
+                  <Select
+                    value={formData.songId}
+                    onValueChange={handleSongChange}
+                  >
+                    <SelectTrigger id="setlist-song">
+                      <SelectValue placeholder="Select a song" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSongs.map((song) => (
+                        <SelectItem key={song.id} value={song.id}>
+                          {song.title} ({song.originalKey})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="setlist-singer">Singer *</Label>
+                  <Select
+                    value={formData.singerId}
+                    onValueChange={handleSingerChange}
+                  >
+                    <SelectTrigger id="setlist-singer">
+                      <SelectValue placeholder="Select a singer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSingers.map((singer) => (
+                        <SelectItem key={singer.id} value={singer.id}>
+                          {singer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="setlist-key">Selected Key</Label>
+                  <Input
+                    id="setlist-key"
+                    name="selectedKey"
+                    value={formData.selectedKey}
+                    onChange={handleSongFormChange}
+                    placeholder="Recommended or custom key"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="setlist-notes">Notes</Label>
+                  <Textarea
+                    id="setlist-notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleSongFormChange}
+                    placeholder="Special instructions for this song"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={() => setIsAddingSong(false)}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit"
-                  isLoading={false}
-                >
+                <Button type="button" onClick={handleAddSong}>
                   Add Song
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Setlist Songs */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">Setlist Songs</h2>
-        {setlist.songs.length === 0 ? (
-          <p className="text-center py-8 text-gray-500 dark:text-gray-400">
-            No songs added yet. Use the form above to add songs to your setlist.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {setlist.songs.map((songItem) => (
-              <Card key={songItem.id} className="hover:shadow-md transition-shadow border-l-4 border-blue-500 dark:border-blue-400">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex-1 min-w-0 flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 w-8 h-8 rounded-full mr-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Song Order</CardTitle>
+            <CardDescription>
+              Reorder songs, adjust keys, and remove items from the setlist.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {setlist.songs.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center">
+                <ListMusic className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="font-medium">No songs added yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Use the form above to add songs to this setlist.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {setlist.songs.map((songItem) => (
+                  <div
+                    key={songItem.id}
+                    className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
                         {songItem.order}
                       </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">
-                        {songItem.songTitle}
-                      </h3>
-                      <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-                        <span>Singer: {songItem.singerName}</span>
-                        <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
-                          Key: {songItem.selectedKey}
-                        </span>
-                        {songItem.selectedKey !== songItem.originalKey && (
-                          <span className="text-xs text-green-600 dark:text-green-400">
-                            (Recommended: {getRecommendedKey(songItem.songId, songItem.singerId)})
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-foreground">
+                            {songItem.songTitle}
+                          </h3>
+                          <Badge variant="secondary">{songItem.originalKey}</Badge>
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {songItem.singerName}
                           </span>
+                          <span className="flex items-center gap-1">
+                            <Music className="h-3.5 w-3.5" />
+                            Key: {songItem.selectedKey}
+                          </span>
+                        </div>
+                        {songItem.notes && (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {songItem.notes}
+                          </p>
                         )}
                       </div>
-                      {songItem.notes && (
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 italic">
-                          {songItem.notes}
-                        </p>
-                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveSong(songItem.id, "up")}
+                        disabled={songItem.order === 1}
+                      >
+                        <ArrowUp className="mr-1 h-4 w-4" />
+                        Up
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => moveSong(songItem.id, "down")}
+                        disabled={songItem.order === setlist.songs.length}
+                      >
+                        <ArrowDown className="mr-1 h-4 w-4" />
+                        Down
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleRemoveSong(songItem.id)}
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Remove
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleMoveUp(songItem.id)}
-                      disabled={songItem.order === 1}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleMoveDown(songItem.id)}
-                      disabled={songItem.order === setlist.songs.length}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="destructive"
-                      ghost
-                      size="sm"
-                      onClick={() => handleRemoveSong(songItem.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      <div className="flex justify-end">
-        <Button 
-          variant="outline"
-          onClick={handleGeneratePDF}
-          className="mr-4"
-        >
-          <FileText className="mr-2" /> Generate PDF
-        </Button>
-        <Button 
-          variant="default"
-          onClick={handleGeneratePDF}
-        >
-          Save Setlist
-        </Button>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={handleGeneratePDF}>
+            <FileText className="mr-2 h-4 w-4" />
+            Generate PDF
+          </Button>
+          <Button onClick={handleSaveSetlist}>
+            <Calendar className="mr-2 h-4 w-4" />
+            Save Setlist
+          </Button>
+        </div>
       </div>
     </div>
   );

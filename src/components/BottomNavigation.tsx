@@ -9,6 +9,7 @@ import {
   List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: Home },
@@ -18,11 +19,20 @@ const navItems = [
   { to: "/singer-keys", label: "Singer Keys", icon: List },
 ];
 
-export const BottomNavigation = () => {
+type BottomNavigationProps = {
+  className?: string;
+};
+
+export const BottomNavigation = ({ className }: BottomNavigationProps) => {
   const location = useLocation();
 
   return (
-    <nav className="fixed inset-x-4 bottom-4 flex justify-around rounded-xl bg-white p-2 shadow-lg dark:bg-gray-800">
+    <nav
+      className={cn(
+        "fixed inset-x-4 bottom-4 flex justify-around rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur dark:bg-gray-900/95",
+        className,
+      )}
+    >
       {navItems.map((item) => {
         const isActive = location.pathname === item.to;
         const Icon = item.icon;
@@ -32,6 +42,7 @@ export const BottomNavigation = () => {
             <Button
               variant={isActive ? "default" : "ghost"}
               className="flex flex-col items-center gap-1 p-2"
+              aria-current={isActive ? "page" : undefined}
             >
               <Icon className="h-5 w-5" />
               <span className="text-xs font-medium">{item.label}</span>
