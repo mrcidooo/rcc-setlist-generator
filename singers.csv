@@ -1,4 +1,4 @@
-id,name,nickname,voiceType,notes,createdAt
+id,name,nickname,voice_type,notes,created_at
 1,John Smith,Johnny,male,Tenor,2024-01-01 08:00:00
 2,Sarah Johnson,Sara,female,Alto,2024-01-02 09:30:00
 3,Mike Davis,,male,Bass,2024-01-03 10:45:00
