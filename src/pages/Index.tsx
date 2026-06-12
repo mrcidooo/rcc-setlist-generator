@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Music, Users, Calendar, FileText, Upload, UserPlus, Library, Settings } from "lucide-react";
+import { Plus, Music, Users, Calendar, FileText, Upload, UserPlus, Library, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { useTheme } from "next-themes";
 
 const dashboardStats = [
   { title: "Total Songs", value: "42", icon: Music, color: "text-blue-600" },
@@ -29,7 +30,9 @@ const quickActions = [
 export default function Index() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isSingerDialogOpen, setIsSingerDialogOpen] = useState(false);
+  const [isSetlistDialogOpen, setIsSetlistDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   const handleQuickAction = (action: string) => {
     switch (action) {
@@ -38,6 +41,9 @@ export default function Index() {
         break;
       case "singer":
         setIsSingerDialogOpen(true);
+        break;
+      case "setlist":
+        setIsSetlistDialogOpen(true);
         break;
       default:
         toast({
@@ -50,9 +56,19 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 flex flex-col">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm p-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Worship Setlist Generator</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">Church Worship Team</p>
+      <header className="bg-white dark:bg-gray-800 shadow-sm p-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Worship Setlist Generator</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Church Worship Team</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          <Sun className="h-5 w-5 dark:-rotate-90 dark:hidden" />
+          <Moon className="h-5 w-5 rotate-90 hidden dark:block" />
+        </Button>
       </header>
 
       {/* Main Content */}
@@ -86,7 +102,7 @@ export default function Index() {
         </div>
 
         {/* Recent Activity */}
-        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-400">Recent Songs</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Recent Songs</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border-0 shadow-sm">
@@ -160,6 +176,47 @@ export default function Index() {
               </Select>
             </div>
             <Button className="w-full">Add Singer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Setlist Dialog */}
+      <Dialog open={isSetlistDialogOpen} onOpenChange={setIsSetlistDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Setlist</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Setlist Name</Label>
+              <Input placeholder="e.g., Sunday Service, Christmas Eve" />
+            </div>
+            <div>
+              <Label>Event Date</Label>
+              <Input type="date" />
+            </div>
+            <div>
+              <Label>Select Songs</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Add songs to setlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Amazing Grace - C</SelectItem>
+                  <SelectItem value="2">How Great Thou Art - G</SelectItem>
+                  <SelectItem value="3">Blessed Assurance - F</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={() => {
+              setIsSetlistDialogOpen(false);
+              toast({
+                title: "Setlist Created",
+                description: "Your new setlist has been created successfully.",
+              });
+            }}>
+              Create Setlist
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
