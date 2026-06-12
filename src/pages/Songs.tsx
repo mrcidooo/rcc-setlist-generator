@@ -52,6 +52,9 @@ export default function Songs() {
     lyrics: "",
   });
 
+  // New state for chord detection
+  const [detectedChords, setDetectedChords] = useState<string[]>([]);
+
   const { toast } = useToast();
 
   const fetchSongs = async () => {
@@ -84,6 +87,23 @@ export default function Songs() {
       supabase.removeChannel(subscription);
     };
   }, []);
+
+  // -----------------------------------------------------------------
+  // Helper: extract unique chords from lyrics (anything inside [])
+  // -----------------------------------------------------------------
+  const extractChords = (text: string): string[] => {
+    const matches = text.match(/\[([^\]\s]+)\]/g);
+    if (!matches) return [];
+    const cleaned = matches.map((m) => m.replace(/[\[\]]/g, "").trim());
+    // Keep order of first appearance, remove duplicates
+    return Array.from(new Set(cleaned));
+  };
+
+  // Run detection whenever the lyrics field changes
+  useEffect(() => {
+    const chords = extractChords(form.lyrics);
+    setDetectedChords(chords);
+  }, [form.lyrics]);
 
   const availableKeys = useMemo(() => {
     const keys = Array.from(new Set(songs.map((s) => (s.originalKey || "").trim()))).sort();
@@ -245,7 +265,7 @@ export default function Songs() {
           </p>
         </div>
 
-        <Button 
+        <Button
           onClick={() => {
             setIsAddingSong((c) => !c);
             if (isAddingSong) {
@@ -334,6 +354,24 @@ export default function Songs() {
                   />
                 </div>
               </div>
+
+              {/* ---- NEW UI: Detected chords preview ---- */}
+              {detectedChords.length > 0 && (
+                <div className="flex flex-wrap gap-2 py-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Detected chords:
+                  </span>
+                  {detectedChords.map((chord) => (
+                    <Badge
+                      key={chord}
+                      variant="secondary"
+                      className="rounded-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-0 text-[10px] font-bold"
+                    >
+                      {chord}
+                    </Badge>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="song-notes" className="text-xs font-bold text-muted-foreground uppercase">Performance Notes</Label>

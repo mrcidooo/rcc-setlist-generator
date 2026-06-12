@@ -1,4 +1,6 @@
-import { useState, type ChangeEvent } from "react";
+"use client";
+
+import { useState, useEffect, type ChangeEvent } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   availableSongs,
@@ -8,19 +10,46 @@ import {
   initialSetlist,
 } from "./constants";
 import type { MoveDirection, Setlist, SetlistFormData } from "./types";
+import { supabase } from "@/lib/supabaseClient";
 
 export function useSetlistBuilder() {
   const [setlist, setSetlist] = useState<Setlist>(initialSetlist);
-  const [formData, setFormData] = useState<SetlistFormData>(
-    emptySetlistSongForm,
-  );
+  const [formData, setFormData] = useState<SetlistFormData>(emptySetlistSongForm);
   const [isAddingSong, setIsAddingSong] = useState(false);
   const { toast } = useToast();
 
-  const recommendedKey = getRecommendedKey(
-    formData.songId,
-    formData.singerId,
-  );
+  // -----------------------------------------------------------------
+  // Load the most recent setlist (or keep the empty starter)
+  // -----------------------------------------------------------------
+  useEffect(() => {
+    const loadSetlist = async () => {
+      const { data, error } = await supabase
+        .from("setlists")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        // PGRST116 = “No rows found” – ignore, we just start fresh
+        console.error("Failed to load setlist:", error);
+        toast({ title: "Unable to load setlist", description: error.message });
+        return;
+      }
+
+      if (data) {
+        // Supabase returns JSON columns as plain objects, so we can cast directly
+        setSetlist(data as Setlist);
+      }
+    };
+
+    loadSetlist();
+  }, [toast]);
+
+  // -----------------------------------------------------------------
+  // Helpers (unchanged logic, just moved into this file)
+  // -----------------------------------------------------------------
+  const recommendedKey = getRecommendedKey(formData.songId, formData.singerId);
 
   const handleSetlistChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -55,6 +84,9 @@ export function useSetlistBuilder() {
     }));
   };
 
+  // -----------------------------------------------------------------
+  // Add song (unchanged)
+  // -----------------------------------------------------------------
   const handleAddSong = () => {
     if (!formData.songId || !formData.singerId) {
       toast({
@@ -65,9 +97,7 @@ export function useSetlistBuilder() {
     }
 
     const song = availableSongs.find((item) => item.id === formData.songId);
-    const singer = availableSingers.find(
-      (item) => item.id === formData.singerId,
-    );
+    const singer = availableSingers.find((item) => item.id === formData.singerId);
 
     if (!song || !singer) return;
 
@@ -100,6 +130,9 @@ export function useSetlistBuilder() {
     });
   };
 
+  // -----------------------------------------------------------------
+  // Remove / move songs (unchanged)
+  // -----------------------------------------------------------------
   const handleRemoveSong = (id: string) => {
     setSetlist((current) => ({
       ...current,
@@ -131,7 +164,10 @@ export function useSetlistBuilder() {
     });
   };
 
-  const handleSaveSetlist = () => {
+  // -----------------------------------------------------------------
+  // Save setlist → Supabase (upsert)
+  // -----------------------------------------------------------------
+  const handleSaveSetlist = async () => {
     if (!setlist.name.trim() || !setlist.date) {
       toast({
         title: "Setlist not saved",
@@ -148,12 +184,31 @@ export function useSetlistBuilder() {
       return;
     }
 
+    // Upsert – if an `id` already exists Supabase updates, otherwise it inserts
+    const payload = {
+      ...setlist,
+      // Supabase expects a JSON column for the song list; we store it as is
+      songs: setlist.songs,
+    };
+
+    const { error } = await supabase.from("setlists").upsert(payload, {
+      onConflict: "id",
+    });
+
+    if (error) {
+      toast({ title: "Save failed", description: error.message });
+      return;
+    }
+
     toast({
       title: "Setlist saved",
       description: `${setlist.name} was saved with ${setlist.songs.length} songs.`,
     });
   };
 
+  // -----------------------------------------------------------------
+  // PDF placeholder (unchanged)
+  // -----------------------------------------------------------------
   const handleGeneratePDF = () => {
     if (!setlist.name.trim() || !setlist.date || setlist.songs.length === 0) {
       toast({
