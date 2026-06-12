@@ -47,6 +47,16 @@ body,
   }
 }
 
+/* Custom utilities for background and text colors based on CSS variables */
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+}
+
 /* Existing base styles */
 @layer base {
   :root {
