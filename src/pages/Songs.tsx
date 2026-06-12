@@ -75,7 +75,7 @@ export default function Songs() {
   }, []);
 
   const availableKeys = useMemo(() => {
-    const keys = Array.from(new Set(songs.map((s) => s.originalKey))).sort();
+    const keys = Array.from(new Set(songs.map((s) => (s.originalKey || "").toUpperCase()))).sort();
     return ["all", ...keys];
   }, [songs]);
 
@@ -85,7 +85,7 @@ export default function Songs() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesKey =
-        selectedKey === "all" || song.originalKey === selectedKey;
+        selectedKey === "all" || (song.originalKey || "").toUpperCase() === selectedKey.toUpperCase();
       return matchesSearch && matchesKey;
     });
   }, [songs, searchTerm, selectedKey]);
@@ -94,7 +94,10 @@ export default function Songs() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setForm((c) => ({ ...c, [name]: value }));
+    setForm((c) => ({
+      ...c,
+      [name]: name === "originalKey" ? value.toUpperCase() : value,
+    }));
   };
 
   const handleAddOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -185,7 +188,7 @@ export default function Songs() {
 
     setForm({
       title: song.title,
-      originalKey: song.originalKey,
+      originalKey: (song.originalKey || "").toUpperCase(),
       tempo: song.tempo ?? "",
       tags: tagsArray.join(", "),
       notes: song.notes ?? "",
@@ -193,7 +196,6 @@ export default function Songs() {
     });
     setIsAddingSong(true);
 
-    // Scroll smoothly to top of window to make edit form instantly visible
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     toast({
