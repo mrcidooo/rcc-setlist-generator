@@ -45,7 +45,7 @@ export default function SetlistAddSongDialog({
   const [singers, setSingers] = useState<Singer[]>([]);
   const [search, setSearch] = useState("");
 
-  // Load real data from Supabase
+  // Load real data from Supabase when dialog opens
   useEffect(() => {
     const loadData = async () => {
       const { data: songData, error: songErr } = await supabase
@@ -143,21 +143,17 @@ export default function SetlistAddSongDialog({
           )}
         </div>
 
-        {/* The rest of the form – singers dropdown, key input, notes, etc. */}
+        {/* Pass real songs & singers to the form */}
         <AddSetlistSongForm
           formData={formData}
           recommendedKey={recommendedKey}
           onFormChange={onFormChange}
-          onSongChange={onSongChange} // kept for completeness (won’t be used here)
+          onSongChange={onSongChange}
           onSingerChange={onSingerChange}
-          onAddSong={() => {
-            onAddSong();
-            onOpenChange(false);
-          }}
-          onCancel={() => {
-            onCancel();
-            onOpenChange(false);
-          }}
+          onAddSong={onAddSong}
+          onCancel={onCancel}
+          songs={songs}
+          singers={singers}
         />
       </DialogContent>
     </Dialog>
