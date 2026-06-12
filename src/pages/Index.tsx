@@ -5,9 +5,10 @@ import { Header } from "@/components/home/Header";
 import { DashboardStats } from "@/components/home/DashboardStats";
 import { QuickActions } from "@/components/home/QuickActions";
 import { TeamMembers } from "@/components/home/TeamMembers";
-import { UserPlus, Library, FileText } from "lucide-react";
+import { UserPlus, Library, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
+import { Button } from "@/components/ui/button";
 
 type VoiceType = "male" | "female";
 
@@ -27,20 +28,56 @@ const quickActions = [
 
 const getVoiceTypeLabel = (voice: VoiceType) => (voice === "male" ? "Male" : "Female");
 
+/* -----------------------------------------------------------------
+   Hook: capture the native PWA install prompt and expose a trigger
+   ----------------------------------------------------------------- */
+function useInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault(); // stop the default mini‑infobar
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler as any);
+    return () => window.removeEventListener("beforeinstallprompt", handler as any);
+  }, []);
+
+  const promptInstall = async () => {
+    if (!deferredPrompt) return;
+    // @ts-ignore – the event has a prompt() method
+    const promptEvent = deferredPrompt as any;
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    setDeferredPrompt(null);
+    setCanInstall(false);
+    return outcome;
+  };
+
+  return { canInstall, promptInstall };
+}
+
+/* -----------------------------------------------------------------
+   Home page component
+   ----------------------------------------------------------------- */
 export default function Index() {
   const [singers, setSingers] = useState<Singer[]>([]);
   const [totalSongs, setTotalSongs] = useState(0);
   const { toast } = useToast();
 
+  const { canInstall, promptInstall } = useInstallPrompt();
+
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch dynamic active songs count
+      // Dynamic active songs count
       const { count: songCount } = await supabase
         .from("songs")
         .select("*", { count: "exact", head: true });
       setTotalSongs(songCount ?? 0);
 
-      // Fetch dynamic singers list directly from Supabase
+      // Dynamic singers list
       const { data: singersData, error } = await supabase
         .from("singers")
         .select("id, name, nickname, voice_type, notes");
@@ -52,13 +89,13 @@ export default function Index() {
 
       if (singersData) {
         setSingers(
-          singersData.map((record) => ({
+          singersData.map((record: any) => ({
             id: record.id,
             name: record.name,
             nickname: record.nickname ?? "",
             voiceType: (record.voice_type as VoiceType) ?? "male",
             notes: record.notes ?? "",
-          }))
+          })),
         );
       }
     };
@@ -69,13 +106,22 @@ export default function Index() {
   const handleQuickAction = (action: typeof quickActions[number]["action"]) => {
     switch (action) {
       case "singer":
-        toast({ title: "Team singer management available under 'Singers' tab", description: "Use singers navigation to add team members." });
+        toast({
+          title: "Team singer management available under 'Singers' tab",
+          description: "Use singers navigation to add team members.",
+        });
         break;
       case "setlist":
-        toast({ title: "Setlist building workflow ready!", description: "Press the central calendar action button to open." });
+        toast({
+          title: "Setlist building workflow ready!",
+          description: "Press the central calendar action button to open.",
+        });
         break;
       case "pdf":
-        toast({ title: "PDF generation is automated in Setlists!", description: "Choose any setlist to instantly download high-quality PDFs." });
+        toast({
+          title: "PDF generation is automated in Setlists!",
+          description: "Choose any setlist to instantly download high-quality PDFs.",
+        });
         break;
     }
   };
@@ -87,24 +133,40 @@ export default function Index() {
 
       <div className="flex-1 space-y-6">
         {/* Dynamic Neumorphic Stats */}
-        <div>
-          <DashboardStats
-            totalSongs={totalSongs}
-            totalSingers={singers.length}
-          />
-        </div>
+        <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
 
-        {/* Modular Grid Workspaces */}
-        <div>
+        {/* Quick Workspaces */}
+        <section>
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 px-1">
             Quick Workspaces
           </h2>
           <QuickActions actions={quickActions as any} onAction={handleQuickAction} />
-        </div>
+        </section>
 
         {/* Team profiles */}
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
       </div>
+
+      {/* Install to Device button – shown only when supported */}
+      {canInstall && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            variant="default"
+            onClick={async () => {
+              const outcome = await promptInstall();
+              if (outcome === "accepted") {
+                toast({ title: "App installed!", description: "Enjoy using VocalFlow offline." });
+              } else {
+                toast({ title: "Install cancelled", description: "You can install later from the browser menu." });
+              }
+            }}
+            className="flex items-center gap-2 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6 py-2"
+          >
+            <Download className="h-4 w-4" />
+            Install to Device
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
