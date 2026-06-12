@@ -62,7 +62,16 @@ export default function SingerKeyPreferences() {
       const storedMatrix = localStorage.getItem("vocal_key_matrix");
       if (storedMatrix) {
         try {
-          setSingerKeyData(JSON.parse(storedMatrix));
+          const parsed = JSON.parse(storedMatrix);
+          // Normalize existing saved keys to uppercase
+          const normalized: Record<string, Record<string, string>> = {};
+          Object.keys(parsed).forEach((songId) => {
+            normalized[songId] = {};
+            Object.keys(parsed[songId]).forEach((singerId) => {
+              normalized[songId][singerId] = String(parsed[songId][singerId] || "").toUpperCase();
+            });
+          });
+          setSingerKeyData(normalized);
         } catch (e) {
           console.error("Error parsing stored keys matrix:", e);
         }
@@ -73,15 +82,17 @@ export default function SingerKeyPreferences() {
   }, []);
 
   const getKeyForSinger = (songId: string, singerId: string) => {
-    return singerKeyData[songId]?.[singerId] ?? "";
+    const rawVal = singerKeyData[songId]?.[singerId] ?? "";
+    return rawVal.toUpperCase();
   };
 
   const handleKeyChange = (songId: string, singerId: string, value: string) => {
+    const uppercaseValue = value.toUpperCase();
     const updated = {
       ...singerKeyData,
       [songId]: {
         ...(singerKeyData[songId] ?? {}),
-        [singerId]: value.toUpperCase(),
+        [singerId]: uppercaseValue,
       },
     };
     setSingerKeyData(updated);
