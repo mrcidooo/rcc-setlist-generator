@@ -51,9 +51,13 @@ export default function SetlistBuilder() {
   const handleAddSongAndScroll = () => {
     handleAddSong();          // adds the track to the setlist state
     closeAddSongDialog();     // closes the modal
+
     // Give React a tick before scrolling (state updates are async)
     setTimeout(() => {
-      songListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      songListRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 200);
   };
 
@@ -104,7 +108,9 @@ export default function SetlistBuilder() {
 
       {/* Song‑order list – wrapped with a ref for scrolling */}
       <div ref={songListRef}>
+        {/* Adding a key forces React to re‑render the list when its length changes */}
         <SetlistSongList
+          key={setlist.songs.length}
           songs={setlist.songs}
           onRemoveSong={handleRemoveSong}
           onMoveSong={moveSong}
