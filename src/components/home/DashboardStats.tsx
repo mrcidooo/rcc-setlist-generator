@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Music, Calendar, FileText } from "lucide-react";
+import { Users, Music } from "lucide-react";
 import { type ComponentType } from "react";
 
 type Stat = {
@@ -15,15 +15,11 @@ type Stat = {
 
 type Props = {
   totalSongs: number;
-  upcomingSetlists: number;
-  recentAdded: number;
   totalSingers: number;
 };
 
 export const DashboardStats = ({
   totalSongs,
-  upcomingSetlists,
-  recentAdded,
   totalSingers,
 }: Props) => {
   const stats: Stat[] = [
@@ -34,22 +30,6 @@ export const DashboardStats = ({
       color: "text-indigo-500 dark:text-indigo-400",
       glow: "glow-primary",
       gradient: "from-indigo-500/10 to-transparent"
-    },
-    { 
-      title: "Setlists", 
-      value: upcomingSetlists.toString(), 
-      icon: Calendar, 
-      color: "text-fuchsia-500 dark:text-fuchsia-400",
-      glow: "glow-purple",
-      gradient: "from-fuchsia-500/10 to-transparent"
-    },
-    { 
-      title: "Recent", 
-      value: recentAdded.toString(), 
-      icon: FileText, 
-      color: "text-amber-500 dark:text-amber-400",
-      glow: "shadow-[0_0_20px_rgba(245,158,11,0.25)]",
-      gradient: "from-amber-500/10 to-transparent"
     },
     { 
       title: "Team Singers", 
@@ -68,7 +48,7 @@ export const DashboardStats = ({
         return (
           <Card
             key={idx}
-            className={`neu-card group overflow-hidden border-0 bg-gradient-to-b ${stat.gradient} to-background/5 p-[1px] hover:translate-y-[-2px] transition-transform duration-300`}
+            className="neu-card group overflow-hidden border-0 bg-gradient-to-b from-indigo-500/10 to-transparent to-background/5 p-[1px] hover:translate-y-[-2px] transition-transform duration-300"
           >
             <div className="rounded-[27px] bg-white/85 dark:bg-card/90 p-4 flex flex-col items-center text-center">
               <div className={`p-3 rounded-[20px] bg-background/50 border border-white/10 ${stat.glow} mb-2.5 transition-transform duration-300 group-hover:scale-110`}>
