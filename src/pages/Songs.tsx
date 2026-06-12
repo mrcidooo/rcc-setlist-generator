@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Music, Plus, Search, Trash2 } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
+import SongPreviewDialog from "@/components/SongPreviewDialog";
 
 export default function Songs() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -136,7 +137,7 @@ export default function Songs() {
       tags: parsedTags,
       addedAt: "Just now",
       notes: form.notes.trim(),
-      lyrics: form.lyrics.trim(), // store lyrics with chords
+      lyrics: form.lyrics.trim(),
     };
 
     const { data, error } = await supabase.from("songs").insert(newSong).select();
@@ -193,15 +194,19 @@ export default function Songs() {
   };
 
   // -----------------------------------------------------------------
-  // Preview (unchanged)
+  // Preview – open dialog with lyrics/chords
   // -----------------------------------------------------------------
+  const [previewSong, setPreviewSong] = useState<Song | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   const handlePreview = (song: Song) => {
-    toast({
-      title: song.title,
-      description: `Original key: ${song.originalKey}${
-        song.tempo ? ` • ${song.tempo}` : ""
-      }`,
-    });
+    setPreviewSong(song);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewSong(null);
   };
 
   // -----------------------------------------------------------------
@@ -385,6 +390,13 @@ export default function Songs() {
             )}
           </CardContent>
         </Card>
+
+        {/* Preview Dialog */}
+        <SongPreviewDialog
+          song={previewSong}
+          open={isPreviewOpen}
+          onClose={closePreview}
+        />
       </div>
     </div>
   );
