@@ -38,7 +38,12 @@ export const Header = () => {
   }, [screenRipple]);
 
   // Theme‑aware ring colour for the logo
-  const logoRing = isDark ? "ring-2 ring-indigo-600/30" : "ring-2 ring-indigo-300/30";
+  const logoRing = isDark
+    ? "ring-2 ring-indigo-600/30"
+    : "ring-2 ring-indigo-300/30";
+
+  // Slight inner shadow that works in both themes
+  const logoShadow = "shadow-[inset_0_1px_3px_rgba(0,0,0,0.12)]";
 
   return (
     <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
@@ -54,11 +59,16 @@ export const Header = () => {
             className={`
               flex h-11 w-11 items-center justify-center rounded-2xl
               bg-gradient-to-tr from-indigo-500 to-purple-600
-              shadow-[0_0_15px_rgba(99,102,241,0.5)]
+              ${logoShadow}
               animate-[kick_0.4s_ease-out] ${logoRing}
             `}
           >
-            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

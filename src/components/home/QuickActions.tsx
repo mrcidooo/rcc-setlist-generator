@@ -6,7 +6,7 @@ import { type ComponentType } from "react";
 type QuickAction = {
   title: string;
   icon: ComponentType<{ className?: string }>;
-  color: string; // gradient background color for the icon container
+  color: string; // gradient background colour for the icon container
   action: "upload" | "singer" | "setlist" | "pdf";
 };
 
@@ -16,16 +16,27 @@ type Props = {
 };
 
 export const QuickActions = ({ actions, onAction }: Props) => {
-  // If we have exactly three actions, use a centered flex layout.
   const isThree = actions.length === 3;
 
+  /* -----------------------------------------------------------------
+   * Layout strategy
+   * -----------------------------------------------------------------
+   * • 3 actions → flex container:
+   *   – mobile (sm < 640px) → vertical stack, each button full width
+   *   – md‑up (≥640px)   → three equal columns, centred
+   * • other counts → simple 2‑column grid that also collapses to a
+   *   single column on mobile.
+   * ----------------------------------------------------------------- */
   const containerClass = isThree
-    ? "flex justify-center gap-5"
-    : "grid grid-cols-2 gap-5";
+    ? "flex flex-col sm:flex-row sm:justify-center sm:gap-5"
+    : "grid grid-cols-1 sm:grid-cols-2 gap-5";
 
-  const itemClass = isThree
-    ? "flex-1 max-w-[180px]" // give each button a max‑width so they stay balanced
-    : "";
+  const buttonBase =
+    "relative flex flex-col items-center justify-center p-5 min-h-[120px] rounded-[22px] bg-white/70 dark:bg-card/70 border border-white/20 dark:border-white/5 neu-btn hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] transition-shadow duration-300";
+
+  const buttonResponsive = isThree
+    ? "w-full sm:w-auto flex-1 max-w-[180px]"
+    : "w-full";
 
   return (
     <div className={containerClass}>
@@ -36,7 +47,7 @@ export const QuickActions = ({ actions, onAction }: Props) => {
             key={idx}
             type="button"
             onClick={() => onAction(action.action)}
-            className={`relative flex flex-col items-center justify-center p-5 min-h-[120px] rounded-[22px] bg-white/70 dark:bg-card/70 border border-white/20 dark:border-white/5 neu-btn hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] transition-shadow duration-300 ${itemClass}`}
+            className={`${buttonBase} ${buttonResponsive} ${buttonResponsive}`}
           >
             {/* Gradient icon background with neumorphic feel */}
             <div
