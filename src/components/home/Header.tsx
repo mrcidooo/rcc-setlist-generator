@@ -59,16 +59,3 @@ export const Header = () => {
     </header>
   );
 };
-
-/* Tailwind custom animation – add to your global CSS (globals.css) */
-@layer utilities {
-  @keyframes ripple {
-    to {
-      transform: scale(4);
-      opacity: 0;
-    }
-  }
-  .animate-\[ripple_0\.3s_ease-out\] {
-    animation: ripple 0.3s ease-out forwards;
-  }
-}
