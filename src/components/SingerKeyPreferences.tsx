@@ -40,21 +40,19 @@ export default function SingerKeyPreferences() {
       const { data: singersData, error: singersError } = await supabase
         .from("singers")
         .select("id, name");
-
       if (!singersError && singersData) setSingers(singersData);
 
       // Load songs
       const { data: songsData, error: songsError } = await supabase
         .from("songs")
         .select("id, title");
-
       if (!songsError && songsData) setSongs(songsData);
 
-      // Load existing matrix (fallback to localStorage)
+      // Load matrix (fallback to localStorage)
       const { data: matrixData, error: matrixError } = await supabase
         .from("key_matrix")
         .select("matrix, user_id")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "public")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
         .single();
 
       if (!matrixError && matrixData?.matrix) {
@@ -96,13 +94,22 @@ export default function SingerKeyPreferences() {
     }));
   };
 
-  /** Save matrix – delete any existing row for this user, then insert the new payload */
+  /** Save matrix – only to Supabase when a real user (UUID) exists */
   const handleSaveMatrix = async () => {
-    // Keep localStorage for legacy fallback
+    // Persist locally (keeps legacy behaviour)
     localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
 
-    const user = (await supabase.auth.getUser()).data.user;
-    const userId = user?.id ?? "public";
+    // Get current user
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) {
+      toast({
+        title: "Matrix saved locally",
+        description: "Log in to store the matrix in Supabase.",
+      });
+      return;
+    }
 
     // 1️⃣ Delete any previous matrix for this user
     const { error: deleteError } = await supabase
@@ -111,10 +118,7 @@ export default function SingerKeyPreferences() {
       .eq("user_id", userId);
 
     if (deleteError) {
-      toast({
-        title: "Matrix save failed",
-        description: deleteError.message,
-      });
+      toast({ title: "Matrix save failed", description: deleteError.message });
       return;
     }
 
@@ -127,10 +131,7 @@ export default function SingerKeyPreferences() {
     const { error: insertError } = await supabase.from("key_matrix").insert(payload);
 
     if (insertError) {
-      toast({
-        title: "Matrix save failed",
-        description: insertError.message,
-      });
+      toast({ title: "Matrix save failed", description: insertError.message });
       return;
     }
 
