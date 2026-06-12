@@ -25,7 +25,7 @@ type SongCardProps = {
   song: Song;
   onPreview: (song: Song) => void;
   onDelete: (songId: string) => void;
-  onEdit: (song: Song) => void; // new prop
+  onEdit: (song: Song) => void;
 };
 
 export const SongCard = ({
@@ -44,10 +44,16 @@ export const SongCard = ({
             <Music className="h-5 w-5" />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPreview(song)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onPreview(song)}
+            >
               Preview
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               aria-label={`Edit ${song.title}`}
@@ -56,6 +62,7 @@ export const SongCard = ({
               <Edit className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               aria-label={`Delete ${song.title}`}
