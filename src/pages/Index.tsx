@@ -71,13 +71,11 @@ export default function Index() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Dynamic active songs count
       const { count: songCount } = await supabase
         .from("songs")
         .select("*", { count: "exact", head: true });
       setTotalSongs(songCount ?? 0);
 
-      // Dynamic singers list
       const { data: singersData, error } = await supabase
         .from("singers")
         .select("id, name, nickname, voice_type, notes");
@@ -135,9 +133,9 @@ export default function Index() {
         {/* Dynamic Neumorphic Stats */}
         <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
 
-        {/* Quick Workspaces – redesigned */}
+        {/* Quick Workspaces – tighter heading spacing */}
         <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
             Quick Workspaces
           </h2>
           <QuickActions actions={quickActions as any} onAction={handleQuickAction} />

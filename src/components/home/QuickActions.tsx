@@ -24,7 +24,7 @@ export const QuickActions = ({ actions, onAction }: Props) => (
           key={idx}
           type="button"
           onClick={() => onAction(action.action)}
-          className="relative flex flex-col items-center justify-center p-5 rounded-[22px] bg-white/70 dark:bg-card/70 border border-white/20 dark:border-white/5 neu-btn hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] transition-shadow duration-300"
+          className="relative flex flex-col items-center justify-center p-5 min-h-[120px] rounded-[22px] bg-white/70 dark:bg-card/70 border border-white/20 dark:border-white/5 neu-btn hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] transition-shadow duration-300"
         >
           {/* Gradient icon background with neumorphic feel */}
           <div
