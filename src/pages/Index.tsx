@@ -11,6 +11,7 @@ import { TeamMembers } from "@/components/home/TeamMembers";
 import { RecentSongs } from "@/components/home/RecentSongs";
 import { Upload, UserPlus, Library, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { NeumorphicCard } from "@/components/ui/NeumorphicCard";
 
 type VoiceType = "male" | "female";
 
@@ -23,10 +24,10 @@ type Singer = {
 };
 
 const quickActions = [
-  { title: "Upload Song", icon: Upload, color: "bg-blue-500", action: "upload" as const },
-  { title: "Add Singer", icon: UserPlus, color: "bg-green-500", action: "singer" as const },
-  { title: "Create Setlist", icon: Library, color: "bg-purple-500", action: "setlist" as const },
-  { title: "Generate PDF", icon: FileText, color: "bg-orange-500", action: "pdf" as const },
+  { title: "Upload Song", icon: Upload, color: "bg-indigo-600", action: "upload" as const },
+  { title: "Add Singer", icon: UserPlus, color: "bg-indigo-500", action: "singer" as const },
+  { title: "Create Setlist", icon: Library, color: "bg-indigo-400", action: "setlist" as const },
+  { title: "Generate PDF", icon: FileText, color: "bg-indigo-300", action: "pdf" as const },
 ];
 
 const initialSingers: Singer[] = [
@@ -44,7 +45,6 @@ export default function Index() {
   const handleQuickAction = (action: typeof quickActions[number]["action"]) => {
     switch (action) {
       case "upload":
-        // In the real app this would open the upload dialog – placeholder toast for now
         toast({ title: "Upload dialog would open", description: "" });
         break;
       case "singer":
@@ -60,20 +60,21 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 pb-20 flex flex-col mobile-px">
       <Header />
 
-      <div className="flex-1 p-4">
-        <DashboardStats
-          totalSongs={42}
-          upcomingSetlists={5}
-          recentAdded={3}
-          totalSingers={singers.length}
-        />
+      <div className="flex-1 py-6">
+        {/* Dashboard stats – wrapped in neumorphic card */}
+        <NeumorphicCard className="mb-6">
+          <DashboardStats
+            totalSongs={42}
+            upcomingSetlists={5}
+            recentAdded={3}
+            totalSingers={singers.length}
+          />
+        </NeumorphicCard>
 
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Quick Actions
-        </h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">Quick Actions</h2>
         <QuickActions actions={quickActions as any} onAction={handleQuickAction} />
 
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
