@@ -34,6 +34,22 @@ export default function SingerKeyPreferences() {
 
   const { toast } = useToast();
 
+  /** -----------------------------------------------------------------
+   *  Helper – get (or create) a persistent anonymous UUID.
+   *  This UUID is stored in localStorage so the same user gets the same
+   *  `user_id` across sessions, satisfying the UUID column requirement.
+   *  ----------------------------------------------------------------- */
+  const getAnonymousUserId = (): string => {
+    const storageKey = "vocal_key_user";
+    let id = localStorage.getItem(storageKey);
+    if (!id) {
+      // `crypto.randomUUID()` is supported in modern browsers
+      id = crypto.randomUUID();
+      localStorage.setItem(storageKey, id);
+    }
+    return id;
+  };
+
   useEffect(() => {
     const loadSupabaseData = async () => {
       // Load singers
@@ -48,16 +64,19 @@ export default function SingerKeyPreferences() {
         .select("id, title");
       if (!songsError && songsData) setSongs(songsData);
 
-      // Load matrix (fallback to localStorage)
+      // Load existing matrix (fallback to localStorage)
+      const anonId = getAnonymousUserId();
+
       const { data: matrixData, error: matrixError } = await supabase
         .from("key_matrix")
         .select("matrix, user_id")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+        .eq("user_id", anonId)
         .single();
 
       if (!matrixError && matrixData?.matrix) {
         setSingerKeyData(matrixData.matrix as Record<string, Record<string, string>>);
       } else {
+        // No DB entry – try localStorage (legacy behaviour)
         const stored = localStorage.getItem("vocal_key_matrix");
         if (stored) {
           try {
@@ -94,24 +113,19 @@ export default function SingerKeyPreferences() {
     }));
   };
 
-  /** Save matrix – only to Supabase when a real user (UUID) exists */
+  /** -----------------------------------------------------------------
+   *  Save matrix – works for both logged‑in users and anonymous users.
+   *  For anonymous users we use the generated UUID from `getAnonymousUserId()`.
+   *  ----------------------------------------------------------------- */
   const handleSaveMatrix = async () => {
-    // Persist locally (keeps legacy behaviour)
+    // Keep localStorage for legacy fallback
     localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
 
-    // Get current user
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData?.user?.id;
+    // Determine which user_id to use
+    const { data: authUser } = await supabase.auth.getUser();
+    const userId = authUser?.user?.id ?? getAnonymousUserId();
 
-    if (!userId) {
-      toast({
-        title: "Matrix saved locally",
-        description: "Log in to store the matrix in Supabase.",
-      });
-      return;
-    }
-
-    // 1️⃣ Delete any previous matrix for this user
+    // 1️⃣ Delete any previous matrix for this user_id
     const { error: deleteError } = await supabase
       .from("key_matrix")
       .delete()
