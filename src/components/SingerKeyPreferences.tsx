@@ -41,24 +41,16 @@ export default function SingerKeyPreferences() {
         .from("singers")
         .select("id, name");
 
-      if (singersError) {
-        console.error("Error loading singers for keys:", singersError);
-      } else if (singersData) {
-        setSingers(singersData);
-      }
+      if (!singersError && singersData) setSingers(singersData);
 
       // Load songs
       const { data: songsData, error: songsError } = await supabase
         .from("songs")
         .select("id, title");
 
-      if (songsError) {
-        console.error("Error loading songs for keys:", songsError);
-      } else if (songsData) {
-        setSongs(songsData);
-      }
+      if (!songsError && songsData) setSongs(songsData);
 
-      // Load matrix data from Supabase if it exists (fallback to localStorage)
+      // Load existing matrix (fallback to localStorage)
       const { data: matrixData, error: matrixError } = await supabase
         .from("key_matrix")
         .select("matrix, user_id")
@@ -68,21 +60,20 @@ export default function SingerKeyPreferences() {
       if (!matrixError && matrixData?.matrix) {
         setSingerKeyData(matrixData.matrix as Record<string, Record<string, string>>);
       } else {
-        // If no DB entry, try localStorage (preserves previous behaviour)
-        const storedMatrix = localStorage.getItem("vocal_key_matrix");
-        if (storedMatrix) {
+        const stored = localStorage.getItem("vocal_key_matrix");
+        if (stored) {
           try {
-            const parsed = JSON.parse(storedMatrix);
+            const parsed = JSON.parse(stored);
             const normalized: Record<string, Record<string, string>> = {};
             Object.keys(parsed).forEach((songId) => {
               normalized[songId] = {};
               Object.keys(parsed[songId]).forEach((singerId) => {
-                normalized[songId][singerId] = String(parsed[songId][singerId] || "");
+                normalized[songId][singerId] = String(parsed[songId][singerId] ?? "");
               });
             });
             setSingerKeyData(normalized);
           } catch (e) {
-            console.error("Error parsing stored keys matrix:", e);
+            console.error("Error parsing stored matrix:", e);
           }
         }
       }
@@ -96,37 +87,49 @@ export default function SingerKeyPreferences() {
   };
 
   const handleKeyChange = (songId: string, singerId: string, value: string) => {
-    const updated = {
-      ...singerKeyData,
+    setSingerKeyData((prev) => ({
+      ...prev,
       [songId]: {
-        ...(singerKeyData[songId] ?? {}),
+        ...(prev[songId] ?? {}),
         [singerId]: value,
       },
-    };
-    setSingerKeyData(updated);
+    }));
   };
 
+  /** Save matrix – delete any existing row for this user, then insert the new payload */
   const handleSaveMatrix = async () => {
-    // Persist to localStorage (keeps legacy behaviour)
+    // Keep localStorage for legacy fallback
     localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
 
-    // Persist to Supabase
     const user = (await supabase.auth.getUser()).data.user;
-    const userId = user?.id ?? "public"; // fallback if not logged in
+    const userId = user?.id ?? "public";
 
+    // 1️⃣ Delete any previous matrix for this user
+    const { error: deleteError } = await supabase
+      .from("key_matrix")
+      .delete()
+      .eq("user_id", userId);
+
+    if (deleteError) {
+      toast({
+        title: "Matrix save failed",
+        description: deleteError.message,
+      });
+      return;
+    }
+
+    // 2️⃣ Insert the fresh matrix
     const payload = {
       user_id: userId,
       matrix: singerKeyData,
     };
 
-    const { error } = await supabase.from("key_matrix").upsert(payload, {
-      onConflict: "user_id",
-    });
+    const { error: insertError } = await supabase.from("key_matrix").insert(payload);
 
-    if (error) {
+    if (insertError) {
       toast({
         title: "Matrix save failed",
-        description: error.message,
+        description: insertError.message,
       });
       return;
     }
@@ -141,7 +144,6 @@ export default function SingerKeyPreferences() {
     const confirmed = window.confirm(
       `Delete ${singer.name}? This will remove them from the database.`,
     );
-
     if (!confirmed) return;
 
     const { error } = await supabase.from("singers").delete().eq("id", singer.id);
@@ -150,21 +152,14 @@ export default function SingerKeyPreferences() {
       return;
     }
 
-    setSingers((current) =>
-      current.filter((currentSinger) => currentSinger.id !== singer.id),
-    );
-
-    toast({
-      title: "Singer removed",
-      description: `${singer.name} was removed from the key list.`,
-    });
+    setSingers((cur) => cur.filter((s) => s.id !== singer.id));
+    toast({ title: "Singer removed", description: `${singer.name} was removed.` });
   };
 
   const handleDeleteSong = async (song: Song) => {
     const confirmed = window.confirm(
       `Delete "${song.title}"? This will remove it from the database.`,
     );
-
     if (!confirmed) return;
 
     const { error } = await supabase.from("songs").delete().eq("id", song.id);
@@ -173,18 +168,13 @@ export default function SingerKeyPreferences() {
       return;
     }
 
-    setSongs((current) =>
-      current.filter((currentSong) => currentSong.id !== song.id),
-    );
-
-    toast({
-      title: "Song removed",
-      description: `"${song.title}" was removed from the key list.`,
-    });
+    setSongs((cur) => cur.filter((s) => s.id !== song.id));
+    toast({ title: "Song removed", description: `"${song.title}" was removed.` });
   };
 
   return (
     <div className="space-y-6 px-4 py-6 max-w-4xl mx-auto pb-32">
+      {/* Header */}
       <div className="px-1 mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <KeyRound className="h-6 w-6 text-indigo-500 animate-pulse" />
@@ -195,6 +185,7 @@ export default function SingerKeyPreferences() {
         </p>
       </div>
 
+      {/* Singers list */}
       <section id="singers" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
           <CardHeader className="pb-3">
@@ -204,9 +195,7 @@ export default function SingerKeyPreferences() {
                   <Users className="h-5 w-5 text-indigo-500" />
                   Singers Configuration
                 </CardTitle>
-                <CardDescription>
-                  Team vocalists mapped to dynamic service components.
-                </CardDescription>
+                <CardDescription>Team vocalists mapped to dynamic service components.</CardDescription>
               </div>
               <Badge variant="secondary" className="rounded-[12px] bg-indigo-500/10 text-indigo-500 px-3 py-1 font-bold">
                 {singers.length} Active
@@ -248,6 +237,7 @@ export default function SingerKeyPreferences() {
         </Card>
       </section>
 
+      {/* Songs list */}
       <section id="songs" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
           <CardHeader className="pb-3">
@@ -257,9 +247,7 @@ export default function SingerKeyPreferences() {
                   <Music className="h-5 w-5 text-purple-500" />
                   Active Songs Index
                 </CardTitle>
-                <CardDescription>
-                  Registered tracklist representing worship libraries.
-                </CardDescription>
+                <CardDescription>Registered tracklist representing worship libraries.</CardDescription>
               </div>
               <Badge variant="secondary" className="rounded-[12px] bg-purple-500/10 text-purple-500 px-3 py-1 font-bold">
                 {songs.length} Tracks
@@ -301,6 +289,7 @@ export default function SingerKeyPreferences() {
         </Card>
       </section>
 
+      {/* Interactive matrix */}
       <section id="comfortable-keys" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75 overflow-hidden">
           <CardHeader className="pb-4">
@@ -358,9 +347,7 @@ export default function SingerKeyPreferences() {
                           <td key={`${song.id}-${singer.id}`} className="px-6 py-4 text-center">
                             <Input
                               value={getKeyForSinger(song.id, singer.id)}
-                              onChange={(event) =>
-                                handleKeyChange(song.id, singer.id, event.target.value)
-                              }
+                              onChange={(e) => handleKeyChange(song.id, singer.id, e.target.value)}
                               className="h-10 w-16 text-center font-extrabold text-indigo-500 dark:text-indigo-400 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl focus:border-indigo-500 inline-block"
                               placeholder="-"
                             />
