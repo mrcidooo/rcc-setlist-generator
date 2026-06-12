@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import SingerKeyList from "./pages/SingerKeyList";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "next-themes";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 const queryClient = new QueryClient();
 
@@ -17,11 +18,14 @@ const App = () => (
       <Sonner />
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/singer-keys" element={<SingerKeyList />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/singer-keys" element={<SingerKeyList />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNavigation />
+          </div>
         </BrowserRouter>
       </ThemeProvider>
     </TooltipProvider>

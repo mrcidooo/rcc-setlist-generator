@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label>;
 import {
   Select,
   SelectContent,
@@ -37,7 +37,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { useTheme } from "next-themes";
-import SingerKeyPreferences from "@/components/SingerKeyPreferences";
 
 type VoiceType = "male" | "female";
 
@@ -314,10 +313,6 @@ export default function Index() {
             </Card>
           ))}
         </div>
-
-        <section className="mt-8">
-          <SingerKeyPreferences />
-        </section>
       </div>
 
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
