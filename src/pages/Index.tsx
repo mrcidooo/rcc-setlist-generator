@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Header } from "@/components/home/Header";
 import { DashboardStats } from "@/components/home/DashboardStats";
 import { QuickActions } from "@/components/home/QuickActions";
@@ -106,10 +105,6 @@ export default function Index() {
         {/* Team profiles */}
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
       </div>
-
-      <footer className="mt-12">
-        <MadeWithDyad />
-      </footer>
     </div>
   );
 }
