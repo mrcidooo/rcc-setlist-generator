@@ -1,41 +1,16 @@
-"use client"
-import { type ComponentType, type FormEvent, useState } from "react";
-import {
-  Music,
-  Users,
-  Calendar,
-  FileText,
-  Upload,
-  UserPlus,
-  Library,
-  Moon,
-  Sun,
-} from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { useTheme } from "next-themes";
+import { Header } from "@/components/home/Header";
+import { DashboardStats } from "@/components/home/DashboardStats";
+import { QuickActions } from "@/components/home/QuickActions";
+import { TeamMembers } from "@/components/home/TeamMembers";
+import { RecentSongs } from "@/components/home/RecentSongs";
+import { Upload, UserPlus, Library, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type VoiceType = "male" | "female";
 
@@ -47,520 +22,64 @@ type Singer = {
   notes: string;
 };
 
-type QuickActionType = "upload" | "singer" | "setlist" | "pdf";
-
-type QuickAction = {
-  title: string;
-  icon: ComponentType<{ className?: string }>;
-  color: string;
-  action: QuickActionType;
-};
-
-const dashboardStatsBase: Array<{
-  title: string;
-  value: string;
-  icon: ComponentType<{ className?: string }>;
-  color: string;
-}> = [
-  { title: "Total Songs", value: "42", icon: Music, color: "text-blue-600" },
-  {
-    title: "Upcoming Setlists",
-    value: "5",
-    icon: Calendar,
-    color: "text-purple-600",
-  },
-  {
-    title: "Recently Added",
-    value: "3",
-    icon: FileText,
-    color: "text-orange-600",
-  },
-];
-
-const quickActions: QuickAction[] = [
-  { title: "Upload Song", icon: Upload, color: "bg-blue-500", action: "upload" },
-  {
-    title: "Add Singer",
-    icon: UserPlus,
-    color: "bg-green-500",
-    action: "singer",
-  },
-  {
-    title: "Create Setlist",
-    icon: Library,
-    color: "bg-purple-500",
-    action: "setlist",
-  },
-  {
-    title: "Generate PDF",
-    icon: FileText,
-    color: "bg-orange-500",
-    action: "pdf",
-  },
+const quickActions = [
+  { title: "Upload Song", icon: Upload, color: "bg-blue-500", action: "upload" as const },
+  { title: "Add Singer", icon: UserPlus, color: "bg-green-500", action: "singer" as const },
+  { title: "Create Setlist", icon: Library, color: "bg-purple-500", action: "setlist" as const },
+  { title: "Generate PDF", icon: FileText, color: "bg-orange-500", action: "pdf" as const },
 ];
 
 const initialSingers: Singer[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    nickname: "Johnny",
-    voiceType: "male",
-    notes: "Tenor",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    nickname: "Sara",
-    voiceType: "female",
-    notes: "Alto",
-  },
-  {
-    id: "3",
-    name: "Mike Davis",
-    nickname: "",
-    voiceType: "male",
-    notes: "Bass",
-  },
+  { id: "1", name: "John Smith", nickname: "Johnny", voiceType: "male", notes: "Tenor" },
+  { id: "2", name: "Sarah Johnson", nickname: "Sara", voiceType: "female", notes: "Alto" },
+  { id: "3", name: "Mike Davis", nickname: "", voiceType: "male", notes: "Bass" },
 ];
 
-const getVoiceTypeLabel = (voiceType: VoiceType) => {
-  return voiceType === "male" ? "Male" : "Female";
-};
+const getVoiceTypeLabel = (voice: VoiceType) => (voice === "male" ? "Male" : "Female");
 
 export default function Index() {
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [isSingerDialogOpen, setIsSingerDialogOpen] = useState(false);
-  const [isSetlistDialogOpen, setIsSetlistDialogOpen] = useState(false);
   const [singers, setSingers] = useState<Singer[]>(initialSingers);
-  const [singerForm, setSingerForm] = useState({
-    name: "",
-    nickname: "",
-    voiceType: "male" as VoiceType,
-    notes: "",
-  });
-
-  // ----- upload form state -----
-  const [uploadForm, setUploadForm] = useState({
-    title: "",
-    key: "",
-    tags: "",
-    file: null as File | null,
-  });
-
   const { toast } = useToast();
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
-  const dashboardStats = [
-    ...dashboardStatsBase,
-    {
-      title: "Total Singers",
-      value: singers.length.toString(),
-      icon: Users,
-      color: "text-green-600",
-    },
-  ];
-
-  const resetSingerForm = () => {
-    setSingerForm({
-      name: "",
-      nickname: "",
-      voiceType: "male",
-      notes: "",
-    });
-  };
-
-  const resetUploadForm = () => {
-    setUploadForm({
-      title: "",
-      key: "",
-      tags: "",
-      file: null,
-    });
-  };
-
-  const handleQuickAction = (action: QuickActionType) => {
+  const handleQuickAction = (action: typeof quickActions[number]["action"]) => {
     switch (action) {
       case "upload":
-        setIsUploadDialogOpen(true);
+        // In the real app this would open the upload dialog – placeholder toast for now
+        toast({ title: "Upload dialog would open", description: "" });
         break;
       case "singer":
-        setIsSingerDialogOpen(true);
+        toast({ title: "Add Singer dialog would open", description: "" });
         break;
       case "setlist":
-        setIsSetlistDialogOpen(true);
+        toast({ title: "Setlist dialog would open", description: "" });
         break;
       case "pdf":
-        toast({
-          title: "PDF generation coming soon",
-          description: "This feature will be available soon.",
-        });
+        toast({ title: "PDF generation coming soon", description: "" });
         break;
     }
-  };
-
-  const handleAddSinger = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!singerForm.name.trim()) {
-      toast({
-        title: "Singer not added",
-        description: "Please enter a singer name first.",
-      });
-      return;
-    }
-
-    const newSinger: Singer = {
-      id: Date.now().toString(),
-      name: singerForm.name.trim(),
-      nickname: singerForm.nickname.trim(),
-      voiceType: singerForm.voiceType,
-      notes: singerForm.notes.trim(),
-    };
-
-    setSingers((currentSingers) => [newSinger, ...currentSingers]);
-    resetSingerForm();
-    setIsSingerDialogOpen(false);
-
-    toast({
-      title: "Singer added",
-      description: `${newSinger.name} has been added to your team.`,
-    });
-  };
-
-  // ----- mock upload handler -----
-  const handleUpload = () => {
-    if (!uploadForm.title.trim() || !uploadForm.key.trim() || !uploadForm.file) {
-      toast({
-        title: "Upload failed",
-        description: "Please fill all fields and select a PDF file.",
-      });
-      return;
-    }
-
-    // Build a minimal Song object compatible with Songs page
-    const newSong = {
-      id: Date.now().toString(),
-      title: uploadForm.title.trim(),
-      originalKey: uploadForm.key.trim().toUpperCase(),
-      tempo: "",
-      tags: uploadForm.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      addedAt: new Date().toLocaleDateString(),
-      notes: "",
-    };
-
-    // Save to localStorage so Songs page can read it
-    const stored = localStorage.getItem("uploadedSongs");
-    const uploaded = stored ? JSON.parse(stored) : [];
-    uploaded.push(newSong);
-    localStorage.setItem("uploadedSongs", JSON.stringify(uploaded));
-
-    toast({
-      title: "Song uploaded",
-      description: `${newSong.title} (${newSong.originalKey}) was uploaded successfully.`,
-    });
-
-    resetUploadForm();
-    setIsUploadDialogOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 dark:bg-gray-900 flex flex-col">
-      <header className="bg-white p-4 shadow-sm dark:bg-gray-800 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Worship Setlist Generator
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Church Worship Team
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Toggle dark mode"
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-        >
-          <Sun className={`h-5 w-5 ${isDark ? "hidden" : "block"}`} />
-          <Moon className={`h-5 w-5 ${isDark ? "block" : "hidden"}`} />
-        </Button>
-      </header>
+      <Header />
 
       <div className="flex-1 p-4">
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          {dashboardStats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="border-0 shadow-md">
-                <CardContent className="p-4 text-center">
-                  <Icon className={`mx-auto mb-2 h-8 w-8 ${stat.color}`} />
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stat.title}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <DashboardStats
+          totalSongs={42}
+          upcomingSetlists={5}
+          recentAdded={3}
+          totalSingers={singers.length}
+        />
 
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           Quick Actions
         </h2>
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={index}
-                type="button"
-                className={`${action.color} h-20 flex-col gap-2 text-white`}
-                onClick={() => handleQuickAction(action.action)}
-              >
-                <Icon className="h-6 w-6" />
-                <span className="text-sm font-medium">{action.title}</span>
-              </Button>
-            );
-          })}
-        </div>
+        <QuickActions actions={quickActions as any} onAction={handleQuickAction} />
 
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Team Members
-        </h2>
-        <div className="mb-6 space-y-3">
-          {singers.slice(0, 3).map((singer) => (
-            <Card key={singer.id} className="border-0 shadow-sm">
-              <CardContent className="p-3">
-                <div className="font-medium text-gray-900 dark:text-white">
-                  {singer.name}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {getVoiceTypeLabel(singer.voiceType)}
-                  {singer.nickname ? ` • ${singer.nickname}` : ""}
-                  {singer.notes ? ` • ${singer.notes}` : ""}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
 
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          Recent Songs
-        </h2>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-0 shadow-sm">
-              <CardContent className="flex items-center justify-between p-3">
-                <div>
-                  <div className="font-medium">Amazing Grace</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Key: C • Added: 2 days ago
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">
-                  <FileText className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <RecentSongs />
       </div>
-
-      {/* Upload Song Dialog */}
-      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload New Song</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Song Title</Label>
-              <Input
-                placeholder="Enter song title"
-                value={uploadForm.title}
-                onChange={(e) =>
-                  setUploadForm((c) => ({ ...c, title: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label>Original Key</Label>
-              <Input
-                placeholder="e.g., C, D, G"
-                value={uploadForm.key}
-                onChange={(e) =>
-                  setUploadForm((c) => ({ ...c, key: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label>Tags</Label>
-              <Input
-                placeholder="e.g., Praise, Worship"
-                value={uploadForm.tags}
-                onChange={(e) =>
-                  setUploadForm((c) => ({ ...c, tags: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label>PDF File</Label>
-              <Input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) =>
-                  setUploadForm((c) => ({
-                    ...c,
-                    file: e.target.files?.[0] ?? null,
-                  }))
-                }
-              />
-            </div>
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleUpload}
-            >
-              Upload Song
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Singer Dialog */}
-      <Dialog open={isSingerDialogOpen} onOpenChange={setIsSingerDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Singer</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddSinger} className="space-y-4">
-            <div>
-              <Label htmlFor="singer-name">Full Name</Label>
-              <Input
-                id="singer-name"
-                value={singerForm.name}
-                onChange={(event) =>
-                  setSingerForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="Enter full name"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="singer-nickname">Nickname (Optional)</Label>
-              <Input
-                id="singer-nickname"
-                value={singerForm.nickname}
-                onChange={(event) =>
-                  setSingerForm((current) => ({
-                    ...current,
-                    nickname: event.target.value,
-                  }))
-                }
-                placeholder="Enter nickname"
-              />
-            </div>
-            <div>
-              <Label htmlFor="singer-voice-type">Voice Type</Label>
-              <Select
-                value={singerForm.voiceType}
-                onValueChange={(value) =>
-                  setSingerForm((current) => ({
-                    ...current,
-                    voiceType: value as VoiceType,
-                  }))
-                }
-              >
-                <SelectTrigger id="singer-voice-type">
-                  <SelectValue placeholder="Select voice type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="singer-notes">Notes (Optional)</Label>
-              <Input
-                id="singer-notes"
-                value={singerForm.notes}
-                onChange={(event) =>
-                  setSingerForm((current) => ({
-                    ...current,
-                    notes: event.target.value,
-                  }))
-                }
-                placeholder="e.g., Tenor, Alto, Lead"
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  resetSingerForm();
-                  setIsSingerDialogOpen(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Add Singer</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Setlist Dialog */}
-      <Dialog open={isSetlistDialogOpen} onOpenChange={setIsSetlistDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create New Setlist</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Setlist Name</Label>
-              <Input placeholder="e.g., Sunday Service, Christmas Eve" />
-            </div>
-            <div>
-              <Label>Event Date</Label>
-              <Input type="date" />
-            </div>
-            <div>
-              <Label>Select Songs</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Add songs to setlist" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Amazing Grace - C</SelectItem>
-                  <SelectItem value="2">How Great Thou Art - G</SelectItem>
-                  <SelectItem value="3">Blessed Assurance - F</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => {
-                setIsSetlistDialogOpen(false);
-                toast({
-                  title: "Setlist Created",
-                  description:
-                    "Your new setlist has been created successfully.",
-                });
-              }}
-            >
-              Create Setlist
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <footer className="mt-auto">
         <MadeWithDyad />
