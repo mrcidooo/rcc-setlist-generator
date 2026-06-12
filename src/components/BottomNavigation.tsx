@@ -22,7 +22,7 @@ export const BottomNavigation = () => {
   const location = useLocation();
 
   return (
-    <nav className="border-t border-border bg-white p-4 dark:bg-gray-800 flex justify-around">
+    <nav className="fixed inset-x-4 bottom-4 flex justify-around rounded-xl bg-white p-2 shadow-lg dark:bg-gray-800">
       {navItems.map((item) => {
         const isActive = location.pathname === item.to;
         const Icon = item.icon;
