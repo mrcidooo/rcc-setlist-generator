@@ -192,6 +192,14 @@ export default function Songs() {
       lyrics: (song as any).lyrics ?? "",
     });
     setIsAddingSong(true);
+
+    // Scroll smoothly to top of window to make edit form instantly visible
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    toast({
+      title: "Editing mode active",
+      description: `Editing "${song.title}" record in the form above.`,
+    });
   };
 
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
@@ -224,11 +232,24 @@ export default function Songs() {
         </div>
 
         <Button 
-          onClick={() => setIsAddingSong((c) => !c)}
+          onClick={() => {
+            setIsAddingSong((c) => !c);
+            if (isAddingSong) {
+              setEditingSong(null);
+              setForm({
+                title: "",
+                originalKey: "",
+                tempo: "",
+                tags: "",
+                notes: "",
+                lyrics: "",
+              });
+            }
+          }}
           className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
         >
           <Plus className="mr-2 h-4 w-4" />
-          {isAddingSong ? "Hide Form" : "Upload New Song"}
+          {isAddingSong ? (editingSong ? "Switch to Upload" : "Hide Form") : "Upload New Song"}
         </Button>
       </header>
 
@@ -239,7 +260,7 @@ export default function Songs() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
               <div>
-                <CardTitle className="text-lg font-bold">{editingSong ? "Edit Song Record" : "Upload Song Record"}</CardTitle>
+                <CardTitle className="text-lg font-bold">{editingSong ? `Edit Song: ${editingSong.title}` : "Upload Song Record"}</CardTitle>
                 <CardDescription>
                   Configure song attributes, original keys, and lyrics/chords.
                 </CardDescription>
