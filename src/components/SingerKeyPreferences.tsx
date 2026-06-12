@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Music, Trash2, Users, Sliders, KeyRound } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Singer = {
   id: string;
@@ -24,69 +25,85 @@ type Song = {
   title: string;
 };
 
-const initialSingers: Singer[] = [
-  { id: "1", name: "John Smith" },
-  { id: "2", name: "Sarah Johnson" },
-  { id: "3", name: "Mike Davis" },
-];
-
-const initialSongs: Song[] = [
-  { id: "1", title: "Way Maker" },
-  { id: "2", title: "Goodness of God" },
-  { id: "3", title: "What A Beautiful Name" },
-  { id: "4", title: "Reckless Love" },
-  { id: "5", title: "Gratitude" },
-];
-
-const initialKeyData: Record<string, Record<string, string>> = {
-  "1": { "1": "D", "2": "F", "3": "C" },
-  "2": { "1": "G", "2": "B", "3": "E" },
-  "3": { "1": "D", "2": "F#", "3": "B" },
-  "4": { "1": "G", "2": "B", "3": "D" },
-  "5": { "1": "A", "2": "C#", "3": "F#" },
-};
-
 export default function SingerKeyPreferences() {
-  const [singers, setSingers] = useState<Singer[]>(initialSingers);
-  const [songs, setSongs] = useState<Song[]>(initialSongs);
+  const [singers, setSingers] = useState<Singer[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [singerKeyData, setSingerKeyData] = useState<
     Record<string, Record<string, string>>
-  >(initialKeyData);
+  >({});
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadSupabaseData = async () => {
+      // Load singers
+      const { data: singersData, error: singersError } = await supabase
+        .from("singers")
+        .select("id, name");
+
+      if (singersError) {
+        console.error("Error loading singers for keys:", singersError);
+      } else if (singersData) {
+        setSingers(singersData);
+      }
+
+      // Load songs
+      const { data: songsData, error: songsError } = await supabase
+        .from("songs")
+        .select("id, title");
+
+      if (songsError) {
+        console.error("Error loading songs for keys:", songsError);
+      } else if (songsData) {
+        setSongs(songsData);
+      }
+
+      // Load matrix data from localStorage if exists to preserve user entries
+      const storedMatrix = localStorage.getItem("vocal_key_matrix");
+      if (storedMatrix) {
+        try {
+          setSingerKeyData(JSON.parse(storedMatrix));
+        } catch (e) {
+          console.error("Error parsing stored keys matrix:", e);
+        }
+      }
+    };
+
+    loadSupabaseData();
+  }, []);
 
   const getKeyForSinger = (songId: string, singerId: string) => {
     return singerKeyData[songId]?.[singerId] ?? "";
   };
 
-  const handleDeleteSinger = (singer: Singer) => {
+  const handleKeyChange = (songId: string, singerId: string, value: string) => {
+    const updated = {
+      ...singerKeyData,
+      [songId]: {
+        ...(singerKeyData[songId] ?? {}),
+        [singerId]: value.toUpperCase(),
+      },
+    };
+    setSingerKeyData(updated);
+    localStorage.setItem("vocal_key_matrix", JSON.stringify(updated));
+  };
+
+  const handleDeleteSinger = async (singer: Singer) => {
     const confirmed = window.confirm(
-      `Delete ${singer.name}? This will remove their comfortable keys from every song.`,
+      `Delete ${singer.name}? This will remove them from the database.`,
     );
 
     if (!confirmed) return;
 
+    const { error } = await supabase.from("singers").delete().eq("id", singer.id);
+    if (error) {
+      toast({ title: "Failed to delete singer", description: error.message });
+      return;
+    }
+
     setSingers((current) =>
       current.filter((currentSinger) => currentSinger.id !== singer.id),
     );
-
-    setSingerKeyData((current) => {
-      const next: Record<string, Record<string, string>> = {};
-
-      Object.keys(current).forEach((songId) => {
-        const remainingKeys: Record<string, string> = {};
-
-        Object.keys(current[songId]).forEach((currentSingerId) => {
-          if (currentSingerId !== singer.id) {
-            remainingKeys[currentSingerId] = current[songId][currentSingerId];
-          }
-        });
-
-        next[songId] = remainingKeys;
-      });
-
-      return next;
-    });
 
     toast({
       title: "Singer removed",
@@ -94,28 +111,22 @@ export default function SingerKeyPreferences() {
     });
   };
 
-  const handleDeleteSong = (song: Song) => {
+  const handleDeleteSong = async (song: Song) => {
     const confirmed = window.confirm(
-      `Delete "${song.title}"? This will remove all comfortable keys for this song.`,
+      `Delete "${song.title}"? This will remove it from the database.`,
     );
 
     if (!confirmed) return;
 
+    const { error } = await supabase.from("songs").delete().eq("id", song.id);
+    if (error) {
+      toast({ title: "Failed to delete song", description: error.message });
+      return;
+    }
+
     setSongs((current) =>
       current.filter((currentSong) => currentSong.id !== song.id),
     );
-
-    setSingerKeyData((current) => {
-      const next: Record<string, Record<string, string>> = {};
-
-      Object.keys(current).forEach((songId) => {
-        if (songId !== song.id) {
-          next[songId] = current[songId];
-        }
-      });
-
-      return next;
-    });
 
     toast({
       title: "Song removed",
@@ -287,15 +298,7 @@ export default function SingerKeyPreferences() {
                           <td key={`${song.id}-${singer.id}`} className="px-6 py-4 text-center">
                             <Input
                               value={getKeyForSinger(song.id, singer.id)}
-                              onChange={(event) => {
-                                setSingerKeyData((current) => ({
-                                  ...current,
-                                  [song.id]: {
-                                    ...(current[song.id] ?? {}),
-                                    [singer.id]: event.target.value.toUpperCase(),
-                                  },
-                                }));
-                              }}
+                              onChange={(event) => handleKeyChange(song.id, singer.id, event.target.value)}
                               className="h-10 w-16 text-center font-extrabold text-indigo-500 dark:text-indigo-400 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl focus:border-indigo-500 inline-block"
                               placeholder="-"
                             />
