@@ -40,6 +40,13 @@ body,
   }
 }
 
+/* Custom utility for the `border-border` class used by shadcn/ui */
+@layer utilities {
+  .border-border {
+    @apply border border-gray-200 dark:border-gray-700;
+  }
+}
+
 /* Existing base styles */
 @layer base {
   :root {
