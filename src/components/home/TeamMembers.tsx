@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { type Singer } from "@/pages/Index";
+import { type Singer } from "@/types";
 
 type Props = {
   singers: Singer[];

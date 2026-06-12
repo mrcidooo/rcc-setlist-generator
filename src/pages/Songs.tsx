@@ -50,7 +50,6 @@ export default function Songs() {
     const fetchSongs = async () => {
       const { data, error } = await supabase.from("songs").select("*");
       if (error) {
-        console.error("Error loading songs:", error);
         toast({ title: "Failed to load songs", description: error.message });
         return;
       }
@@ -74,7 +73,10 @@ export default function Songs() {
       )
       .subscribe();
 
-    return () => supabase.removeChannel(subscription);
+    // Cleanup without returning a promise
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   // -----------------------------------------------------------------
@@ -195,17 +197,13 @@ export default function Songs() {
   };
 
   // -----------------------------------------------------------------
-  // Edit flow – robust tag handling
+  // Edit flow – simplified tag handling
   // -----------------------------------------------------------------
   const handleEditSong = (song: Song) => {
     setEditingSong(song);
 
-    // Ensure tags are an array before joining for the input field
-    const tagsArray = Array.isArray(song.tags)
-      ? song.tags
-      : typeof song.tags === "string"
-        ? song.tags.split(",").map((t) => t.trim()).filter(Boolean)
-        : [];
+    // tags are already an array; join them for the input field
+    const tagsArray = Array.isArray(song.tags) ? song.tags : [];
 
     setForm({
       title: song.title,
@@ -261,9 +259,7 @@ export default function Songs() {
             <CardHeader>
               <CardTitle>{editingSong ? "Edit Song" : "Add New Song"}</CardTitle>
               <CardDescription>
-                {editingSong
-                  ? "Update the song details."
-                  : "Enter details for a new song."}
+                {editingSong ? "Update the song details." : "Enter details for a new song."}
               </CardDescription>
             </CardHeader>
             <CardContent>
