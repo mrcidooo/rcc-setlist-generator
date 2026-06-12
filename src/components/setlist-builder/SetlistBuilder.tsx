@@ -1,6 +1,10 @@
 "use client";
 
+import { useState } from "react"; // ← added import
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import AddSetlistSongForm from "./AddSetlistSongForm";
 import SetlistBuilderActions from "./SetlistBuilderActions";
 import SetlistDetailsForm from "./SetlistDetailsForm";
@@ -25,6 +29,20 @@ export default function SetlistBuilder() {
     handleGeneratePDF,
     toggleSongForm,
   } = useSetlistBuilder();
+
+  // Local state to control the dialog visibility
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const openDialog = () => {
+    setDialogOpen(true);
+    // Ensure the form is shown (state may be false when dialog opens)
+    if (!isAddingSong) toggleSongForm();
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    if (isAddingSong) toggleSongForm();
+  };
 
   return (
     <div className="min-h-screen bg-transparent p-4 pb-32 max-w-4xl mx-auto space-y-6 relative">
@@ -54,17 +72,41 @@ export default function SetlistBuilder() {
         onToggleAddingSong={toggleSongForm}
       />
 
-      {isAddingSong && (
-        <AddSetlistSongForm
-          formData={formData}
-          recommendedKey={recommendedKey}
-          onFormChange={handleSongFormChange}
-          onSongChange={handleSongChange}
-          onSingerChange={handleSingerChange}
-          onAddSong={handleAddSong}
-          onCancel={toggleSongForm}
-        />
-      )}
+      {/* The song‑add form is now rendered inside a dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open && isAddingSong) toggleSongForm();
+      }}>
+        <DialogContent className="max-w-2xl rounded-[32px] border-0 bg-white/95 dark:bg-card/95 shadow-2xl p-6 backdrop-blur-3xl">
+          <DialogHeader className="flex flex-row items-start justify-between pb-4 border-b border-black/5 dark:border-white/5">
+            <DialogTitle className="text-lg font-black tracking-tight text-foreground">
+              Add Song to Setlist
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={closeDialog}
+              aria-label="Close add song dialog"
+              className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+
+          <AddSetlistSongForm
+            formData={formData}
+            recommendedKey={recommendedKey}
+            onFormChange={handleSongFormChange}
+            onSongChange={handleSongChange}
+            onSingerChange={handleSingerChange}
+            onAddSong={() => {
+              handleAddSong();
+              closeDialog();
+            }}
+            onCancel={closeDialog}
+          />
+        </DialogContent>
+      </Dialog>
 
       <SetlistSongList
         songs={setlist.songs}
@@ -79,10 +121,10 @@ export default function SetlistBuilder() {
         />
       </div>
 
-      {/* Floating “Add Song” button – always visible when the form is hidden */}
+      {/* Floating “Add Song” button – opens the dialog */}
       {!isAddingSong && (
         <button
-          onClick={toggleSongForm}
+          onClick={openDialog}
           className="fixed bottom-20 right-4 flex items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95 transition-transform duration-200 p-3"
           aria-label="Add Song to Setlist"
         >
