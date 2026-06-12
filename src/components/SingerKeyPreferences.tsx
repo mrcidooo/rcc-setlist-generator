@@ -58,21 +58,32 @@ export default function SingerKeyPreferences() {
         setSongs(songsData);
       }
 
-      // Load matrix data from localStorage if exists to preserve user entries
-      const storedMatrix = localStorage.getItem("vocal_key_matrix");
-      if (storedMatrix) {
-        try {
-          const parsed = JSON.parse(storedMatrix);
-          const normalized: Record<string, Record<string, string>> = {};
-          Object.keys(parsed).forEach((songId) => {
-            normalized[songId] = {};
-            Object.keys(parsed[songId]).forEach((singerId) => {
-              normalized[songId][singerId] = String(parsed[songId][singerId] || "");
+      // Load matrix data from Supabase if it exists (fallback to localStorage)
+      const { data: matrixData, error: matrixError } = await supabase
+        .from("key_matrix")
+        .select("matrix, user_id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "public")
+        .single();
+
+      if (!matrixError && matrixData?.matrix) {
+        setSingerKeyData(matrixData.matrix as Record<string, Record<string, string>>);
+      } else {
+        // If no DB entry, try localStorage (preserves previous behaviour)
+        const storedMatrix = localStorage.getItem("vocal_key_matrix");
+        if (storedMatrix) {
+          try {
+            const parsed = JSON.parse(storedMatrix);
+            const normalized: Record<string, Record<string, string>> = {};
+            Object.keys(parsed).forEach((songId) => {
+              normalized[songId] = {};
+              Object.keys(parsed[songId]).forEach((singerId) => {
+                normalized[songId][singerId] = String(parsed[songId][singerId] || "");
+              });
             });
-          });
-          setSingerKeyData(normalized);
-        } catch (e) {
-          console.error("Error parsing stored keys matrix:", e);
+            setSingerKeyData(normalized);
+          } catch (e) {
+            console.error("Error parsing stored keys matrix:", e);
+          }
         }
       }
     };
@@ -95,8 +106,31 @@ export default function SingerKeyPreferences() {
     setSingerKeyData(updated);
   };
 
-  const handleSaveMatrix = () => {
+  const handleSaveMatrix = async () => {
+    // Persist to localStorage (keeps legacy behaviour)
     localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
+
+    // Persist to Supabase
+    const user = (await supabase.auth.getUser()).data.user;
+    const userId = user?.id ?? "public"; // fallback if not logged in
+
+    const payload = {
+      user_id: userId,
+      matrix: singerKeyData,
+    };
+
+    const { error } = await supabase.from("key_matrix").upsert(payload, {
+      onConflict: "user_id",
+    });
+
+    if (error) {
+      toast({
+        title: "Matrix save failed",
+        description: error.message,
+      });
+      return;
+    }
+
     toast({
       title: "Matrix Saved Successfully",
       description: "Comfort key preferences have been stored for all team vocalists.",
@@ -157,7 +191,7 @@ export default function SingerKeyPreferences() {
           Vocal Key Matrix
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Define and track key preferences for worship team singers to ensure stress-free vocals.
+          Define and track key preferences for worship team singers to ensure stress‑free vocals.
         </p>
       </div>
 
@@ -324,7 +358,9 @@ export default function SingerKeyPreferences() {
                           <td key={`${song.id}-${singer.id}`} className="px-6 py-4 text-center">
                             <Input
                               value={getKeyForSinger(song.id, singer.id)}
-                              onChange={(event) => handleKeyChange(song.id, singer.id, event.target.value)}
+                              onChange={(event) =>
+                                handleKeyChange(song.id, singer.id, event.target.value)
+                              }
                               className="h-10 w-16 text-center font-extrabold text-indigo-500 dark:text-indigo-400 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl focus:border-indigo-500 inline-block"
                               placeholder="-"
                             />
