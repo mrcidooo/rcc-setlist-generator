@@ -56,13 +56,36 @@ export default function AddSetlistSongForm({
   songs,
   singers,
 }: AddSetlistSongFormProps) {
+  // Helper to find a song title by id (used for displaying the selected title)
+  const selectedSong = songs.find((s) => s.id === formData.songId);
+
+  // When the user types or selects a title, we need to map it back to the song id.
+  const handleSongInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const typed = e.target.value;
+    // Find a matching song (case‑insensitive, starts‑with)
+    const match = songs.find(
+      (s) => s.title.toLowerCase() === typed.toLowerCase(),
+    );
+    if (match) {
+      onSongChange(match.id);
+    } else {
+      // No exact match – clear selection
+      onSongChange("");
+    }
+  };
+
   return (
     <Card className="neu-card border-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:bg-card/75">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-indigo-500 animate-spin" style={{ animationDuration: "8s" }} />
+          <Sparkles
+            className="h-5 w-5 text-indigo-500 animate-spin"
+            style={{ animationDuration: "8s" }}
+          />
           <div>
-            <CardTitle className="text-lg font-bold">Assign Song Details</CardTitle>
+            <CardTitle className="text-lg font-bold">
+              Assign Song Details
+            </CardTitle>
             <CardDescription>
               Assign vocalists. Recommended comfort keys are pulled instantly.
             </CardDescription>
@@ -71,37 +94,51 @@ export default function AddSetlistSongForm({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Song selector – now uses real data */}
+          {/* Song selector – searchable datalist (acts as dropdown + input) */}
           <div className="space-y-1.5">
-            <Label htmlFor="setlist-song" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <Label
+              htmlFor="setlist-song"
+              className="text-xs font-bold text-muted-foreground uppercase tracking-wider"
+            >
               Song *
             </Label>
-            <Select value={formData.songId} onValueChange={onSongChange}>
-              <SelectTrigger id="setlist-song" className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10">
-                <SelectValue placeholder="Select a song" />
-              </SelectTrigger>
-              <SelectContent className="rounded-[18px]">
-                {songs.map((song) => (
-                  <SelectItem key={song.id} value={song.id} className="rounded-xl">
-                    {song.title} ({song.originalKey})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="setlist-song"
+              list="song-options"
+              placeholder="Type or select a song"
+              defaultValue={selectedSong?.title ?? ""}
+              onChange={handleSongInputChange}
+              className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+            />
+            <datalist id="song-options">
+              {songs.map((song) => (
+                <option key={song.id} value={song.title} />
+              ))}
+            </datalist>
           </div>
 
-          {/* Singer selector – now uses real data */}
+          {/* Singer selector – unchanged dropdown */}
           <div className="space-y-1.5">
-            <Label htmlFor="setlist-singer" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <Label
+              htmlFor="setlist-singer"
+              className="text-xs font-bold text-muted-foreground uppercase tracking-wider"
+            >
               Singer *
             </Label>
             <Select value={formData.singerId} onValueChange={onSingerChange}>
-              <SelectTrigger id="setlist-singer" className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10">
+              <SelectTrigger
+                id="setlist-singer"
+                className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+              >
                 <SelectValue placeholder="Select a singer" />
               </SelectTrigger>
               <SelectContent className="rounded-[18px]">
                 {singers.map((singer) => (
-                  <SelectItem key={singer.id} value={singer.id} className="rounded-xl">
+                  <SelectItem
+                    key={singer.id}
+                    value={singer.id}
+                    className="rounded-xl"
+                  >
                     {singer.name}
                   </SelectItem>
                 ))}
@@ -111,7 +148,10 @@ export default function AddSetlistSongForm({
 
           {/* Selected key input – shows recommended key if any */}
           <div className="space-y-1.5">
-            <Label htmlFor="setlist-key" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <Label
+              htmlFor="setlist-key"
+              className="text-xs font-bold text-muted-foreground uppercase tracking-wider"
+            >
               Selected Key
             </Label>
             <Input
@@ -124,14 +164,18 @@ export default function AddSetlistSongForm({
             />
             {recommendedKey && (
               <p className="mt-1 text-xs font-bold text-indigo-500 flex items-center gap-1">
-                <Sparkles className="h-3 w-3 animate-pulse" /> Comfort zone key detected: {recommendedKey}
+                <Sparkles className="h-3 w-3 animate-pulse" /> Comfort zone key
+                detected: {recommendedKey}
               </p>
             )}
           </div>
 
           {/* Notes textarea */}
           <div className="md:col-span-2 space-y-1.5">
-            <Label htmlFor="setlist-notes" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <Label
+              htmlFor="setlist-notes"
+              className="text-xs font-bold text-muted-foreground uppercase tracking-wider"
+            >
               Performance Notes
             </Label>
             <Textarea
@@ -147,7 +191,12 @@ export default function AddSetlistSongForm({
         </div>
 
         <div className="mt-2 flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onCancel} className="rounded-xl font-semibold">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+            className="rounded-xl font-semibold"
+          >
             Cancel
           </Button>
           <Button
