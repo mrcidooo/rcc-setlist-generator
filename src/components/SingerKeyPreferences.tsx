@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Trash2, Users, Sliders, KeyRound } from "lucide-react";
+import { Music, Trash2, Users, Sliders, KeyRound, Save } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Singer = {
@@ -93,7 +93,14 @@ export default function SingerKeyPreferences() {
       },
     };
     setSingerKeyData(updated);
-    localStorage.setItem("vocal_key_matrix", JSON.stringify(updated));
+  };
+
+  const handleSaveMatrix = () => {
+    localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
+    toast({
+      title: "Matrix Saved Successfully",
+      description: "Comfort key preferences have been stored for all team vocalists.",
+    });
   };
 
   const handleDeleteSinger = async (singer: Singer) => {
@@ -263,14 +270,25 @@ export default function SingerKeyPreferences() {
       <section id="comfortable-keys" className="scroll-mt-24">
         <Card className="neu-card border-0 bg-white/75 dark:bg-card/75 overflow-hidden">
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Sliders className="h-5 w-5 text-indigo-500" />
-              <div>
-                <CardTitle className="text-lg font-bold">Interactive Key Matrix</CardTitle>
-                <CardDescription>
-                  Manage comfort zones directly by changing values inline.
-                </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Sliders className="h-5 w-5 text-indigo-500" />
+                <div>
+                  <CardTitle className="text-lg font-bold">Interactive Key Matrix</CardTitle>
+                  <CardDescription>
+                    Manage comfort zones directly by changing values inline.
+                  </CardDescription>
+                </div>
               </div>
+              {singers.length > 0 && songs.length > 0 && (
+                <Button
+                  onClick={handleSaveMatrix}
+                  className="h-10 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5 flex items-center gap-1.5 self-start sm:self-auto"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Matrix
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
