@@ -36,6 +36,7 @@ export default function Songs() {
     tempo: "",
     tags: "",
     notes: "",
+    lyrics: "", // new field for lyrics with chords
   });
 
   const { toast } = useToast();
@@ -135,6 +136,7 @@ export default function Songs() {
       tags: parsedTags,
       addedAt: "Just now",
       notes: form.notes.trim(),
+      lyrics: form.lyrics.trim(), // store lyrics with chords
     };
 
     const { data, error } = await supabase.from("songs").insert(newSong).select();
@@ -159,6 +161,7 @@ export default function Songs() {
       tempo: "",
       tags: "",
       notes: "",
+      lyrics: "",
     });
     setIsAddingSong(false);
   };
@@ -291,6 +294,19 @@ export default function Songs() {
                     onChange={handleInputChange}
                     placeholder="Any notes about this song"
                     rows={3}
+                  />
+                </div>
+
+                {/* New lyrics textarea */}
+                <div>
+                  <Label htmlFor="song-lyrics">Lyrics & Chords</Label>
+                  <Textarea
+                    id="song-lyrics"
+                    name="lyrics"
+                    value={form.lyrics}
+                    onChange={handleInputChange}
+                    placeholder="Paste lyrics with chord markings here…"
+                    rows={6}
                   />
                 </div>
 
