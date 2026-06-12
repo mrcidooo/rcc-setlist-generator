@@ -139,6 +139,14 @@ export default function Index() {
     notes: "",
   });
 
+  // ----- upload form state -----
+  const [uploadForm, setUploadForm] = useState({
+    title: "",
+    key: "",
+    tags: "",
+    file: null as File | null,
+  });
+
   const { toast } = useToast();
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -159,6 +167,15 @@ export default function Index() {
       nickname: "",
       voiceType: "male",
       notes: "",
+    });
+  };
+
+  const resetUploadForm = () => {
+    setUploadForm({
+      title: "",
+      key: "",
+      tags: "",
+      file: null,
     });
   };
 
@@ -209,6 +226,26 @@ export default function Index() {
       title: "Singer added",
       description: `${newSinger.name} has been added to your team.`,
     });
+  };
+
+  // ----- mock upload handler -----
+  const handleUpload = () => {
+    if (!uploadForm.title.trim() || !uploadForm.key.trim() || !uploadForm.file) {
+      toast({
+        title: "Upload failed",
+        description: "Please fill all fields and select a PDF file.",
+      });
+      return;
+    }
+
+    // In a real app you would send the file to storage / Supabase.
+    toast({
+      title: "Song uploaded",
+      description: `${uploadForm.title.trim()} (${uploadForm.key.trim()}) was uploaded successfully.`,
+    });
+
+    resetUploadForm();
+    setIsUploadDialogOpen(false);
   };
 
   return (
@@ -313,6 +350,7 @@ export default function Index() {
         </div>
       </div>
 
+      {/* Upload Song Dialog */}
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -321,25 +359,59 @@ export default function Index() {
           <div className="space-y-4">
             <div>
               <Label>Song Title</Label>
-              <Input placeholder="Enter song title" />
+              <Input
+                placeholder="Enter song title"
+                value={uploadForm.title}
+                onChange={(e) =>
+                  setUploadForm((c) => ({ ...c, title: e.target.value }))
+                }
+              />
             </div>
             <div>
               <Label>Original Key</Label>
-              <Input placeholder="e.g., C, D, G" />
+              <Input
+                placeholder="e.g., C, D, G"
+                value={uploadForm.key}
+                onChange={(e) =>
+                  setUploadForm((c) => ({ ...c, key: e.target.value }))
+                }
+              />
             </div>
             <div>
               <Label>Tags</Label>
-              <Input placeholder="e.g., Praise, Worship, Upbeat" />
+              <Input
+                placeholder="e.g., Praise, Worship"
+                value={uploadForm.tags}
+                onChange={(e) =>
+                  setUploadForm((c) => ({ ...c, tags: e.target.value }))
+                }
+              />
             </div>
             <div>
               <Label>PDF File</Label>
-              <Input type="file" accept="application/pdf" />
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) =>
+                  setUploadForm((c) => ({
+                    ...c,
+                    file: e.target.files?.[0] ?? null,
+                  }))
+                }
+              />
             </div>
-            <Button className="w-full">Upload Song</Button>
+            <Button
+              type="button"
+              className="w-full"
+              onClick={handleUpload}
+            >
+              Upload Song
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Singer Dialog */}
       <Dialog open={isSingerDialogOpen} onOpenChange={setIsSingerDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -426,6 +498,7 @@ export default function Index() {
         </DialogContent>
       </Dialog>
 
+      {/* Setlist Dialog */}
       <Dialog open={isSetlistDialogOpen} onOpenChange={setIsSetlistDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
