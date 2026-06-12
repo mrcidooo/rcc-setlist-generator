@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,55 +21,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search } from "lucide-react";
+import { Music, Plus, Search, Trash2 } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
-
-const initialSongs: Song[] = [
-  {
-    id: "1",
-    title: "Way Maker",
-    originalKey: "D",
-    tempo: "72 BPM",
-    tags: ["Worship", "Mid Tempo"],
-    addedAt: "2 days ago",
-    notes: "Great opener with a strong congregational chorus.",
-  },
-  {
-    id: "2",
-    title: "Goodness of God",
-    originalKey: "G",
-    tempo: "68 BPM",
-    tags: ["Worship", "Slow"],
-    addedAt: "5 days ago",
-  },
-  {
-    id: "3",
-    title: "What A Beautiful Name",
-    originalKey: "D",
-    tempo: "70 BPM",
-    tags: ["Worship", "Ballad"],
-    addedAt: "1 week ago",
-  },
-  {
-    id: "4",
-    title: "Reckless Love",
-    originalKey: "G",
-    tempo: "74 BPM",
-    tags: ["Worship", "Mid Tempo"],
-    addedAt: "2 weeks ago",
-  },
-  {
-    id: "5",
-    title: "Gratitude",
-    originalKey: "A",
-    tempo: "64 BPM",
-    tags: ["Worship", "Slow"],
-    addedAt: "3 weeks ago",
-  },
-];
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Songs() {
-  const [songs, setSongs] = useState<Song[]>(initialSongs);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKey, setSelectedKey] = useState("all");
   const [isAddingSong, setIsAddingSong] = useState(false);
@@ -83,6 +40,46 @@ export default function Songs() {
 
   const { toast } = useToast();
 
+  // -----------------------------------------------------------------
+  // Load songs from Supabase (real‑time)
+  // -----------------------------------------------------------------
+  useEffect(() => {
+    const fetchSongs = async () => {
+      const { data, error } = await supabase.from("songs").select("*");
+      if (error) {
+        console.error("Error loading songs:", error);
+        toast({
+          title: "Failed to load songs",
+          description: error.message,
+        });
+      } else {
+        setSongs(data as Song[]);
+      }
+    };
+
+    fetchSongs();
+
+    // Real‑time subscription (optional but nice)
+    const subscription = supabase
+      .channel("public:songs")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "songs" },
+        (payload) => {
+          // Simple refresh – re‑fetch all songs
+          fetchSongs();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  // -----------------------------------------------------------------
+  // Helpers
+  // -----------------------------------------------------------------
   const availableKeys = useMemo(() => {
     const keys = Array.from(new Set(songs.map((song) => song.originalKey))).sort();
     return ["all", ...keys];
@@ -95,7 +92,6 @@ export default function Songs() {
         .includes(searchTerm.toLowerCase());
       const matchesKey =
         selectedKey === "all" || song.originalKey === selectedKey;
-
       return matchesSearch && matchesKey;
     });
   }, [songs, searchTerm, selectedKey]);
@@ -107,7 +103,10 @@ export default function Songs() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleAddSong = (event: React.FormEvent<HTMLFormElement>) => {
+  // -----------------------------------------------------------------
+  // Add new song (writes to Supabase)
+  // -----------------------------------------------------------------
+  const handleAddSong = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!form.title.trim() || !form.originalKey.trim()) {
@@ -123,8 +122,7 @@ export default function Songs() {
       .map((tag) => tag.trim())
       .filter(Boolean);
 
-    const newSong: Song = {
-      id: Date.now().toString(),
+    const newSong: Omit<Song, "id"> = {
       title: form.title.trim(),
       originalKey: form.originalKey.trim().toUpperCase(),
       tempo: form.tempo.trim(),
@@ -133,7 +131,23 @@ export default function Songs() {
       notes: form.notes.trim(),
     };
 
-    setSongs((current) => [newSong, ...current]);
+    const { data, error } = await supabase.from("songs").insert(newSong).select();
+
+    if (error) {
+      console.error("Error adding song:", error);
+      toast({
+        title: "Failed to add song",
+        description: error.message,
+      });
+    } else {
+      // Supabase returns the inserted row(s) with generated IDs
+      setSongs((current) => [...(data as Song[]), ...current]);
+      toast({
+        title: "Song added",
+        description: `${newSong.title} was added to your library.`,
+      });
+    }
+
     setForm({
       title: "",
       originalKey: "",
@@ -142,20 +156,49 @@ export default function Songs() {
       notes: "",
     });
     setIsAddingSong(false);
-
-    toast({
-      title: "Song added",
-      description: `${newSong.title} was added to your library.`,
-    });
   };
 
+  // -----------------------------------------------------------------
+  // Delete song (writes to Supabase)
+  // -----------------------------------------------------------------
+  const handleDeleteSong = async (songId: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this song? This action cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("songs").delete().eq("id", songId);
+
+    if (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Failed to delete song",
+        description: error.message,
+      });
+    } else {
+      setSongs((current) => current.filter((s) => s.id !== songId));
+      toast({
+        title: "Song deleted",
+        description: "The song has been removed from your library.",
+      });
+    }
+  };
+
+  // -----------------------------------------------------------------
+  // Preview (unchanged)
+  // -----------------------------------------------------------------
   const handlePreview = (song: Song) => {
     toast({
       title: song.title,
-      description: `Original key: ${song.originalKey}${song.tempo ? ` • ${song.tempo}` : ""}`,
+      description: `Original key: ${song.originalKey}${
+        song.tempo ? ` • ${song.tempo}` : ""
+      }`,
     });
   };
 
+  // -----------------------------------------------------------------
+  // Render
+  // -----------------------------------------------------------------
   return (
     <div className="min-h-screen bg-background p-4 pb-28">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -314,6 +357,7 @@ export default function Songs() {
                     key={song.id}
                     song={song}
                     onPreview={handlePreview}
+                    onDelete={handleDeleteSong}
                   />
                 ))}
               </div>

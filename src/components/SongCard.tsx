@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FileText, Music } from "lucide-react";
+import { FileText, Music, Trash2 } from "lucide-react";
 
 export type Song = {
   id: string;
@@ -24,9 +24,10 @@ export type Song = {
 type SongCardProps = {
   song: Song;
   onPreview: (song: Song) => void;
+  onDelete: (songId: string) => void;
 };
 
-export const SongCard = ({ song, onPreview }: SongCardProps) => {
+export const SongCard = ({ song, onPreview, onDelete }: SongCardProps) => {
   return (
     <Card className="flex h-full flex-col overflow-hidden shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="space-y-3">
@@ -34,9 +35,19 @@ export const SongCard = ({ song, onPreview }: SongCardProps) => {
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
             <Music className="h-5 w-5" />
           </div>
-          <Button variant="outline" size="sm" onClick={() => onPreview(song)}>
-            Preview
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPreview(song)}>
+              Preview
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Delete ${song.title}`}
+              onClick={() => onDelete(song.id)}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
 
         <CardTitle className="text-lg leading-tight">{song.title}</CardTitle>
