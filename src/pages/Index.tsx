@@ -238,10 +238,29 @@ export default function Index() {
       return;
     }
 
-    // In a real app you would send the file to storage / Supabase.
+    // Build a minimal Song object compatible with Songs page
+    const newSong = {
+      id: Date.now().toString(),
+      title: uploadForm.title.trim(),
+      originalKey: uploadForm.key.trim().toUpperCase(),
+      tempo: "",
+      tags: uploadForm.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      addedAt: new Date().toLocaleDateString(),
+      notes: "",
+    };
+
+    // Save to localStorage so Songs page can read it
+    const stored = localStorage.getItem("uploadedSongs");
+    const uploaded = stored ? JSON.parse(stored) : [];
+    uploaded.push(newSong);
+    localStorage.setItem("uploadedSongs", JSON.stringify(uploaded));
+
     toast({
       title: "Song uploaded",
-      description: `${uploadForm.title.trim()} (${uploadForm.key.trim()}) was uploaded successfully.`,
+      description: `${newSong.title} (${newSong.originalKey}) was uploaded successfully.`,
     });
 
     resetUploadForm();

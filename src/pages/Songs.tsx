@@ -41,7 +41,7 @@ export default function Songs() {
   const { toast } = useToast();
 
   // -----------------------------------------------------------------
-  // Load songs from Supabase (real‑time)
+  // Load songs from Supabase and localStorage (real‑time)
   // -----------------------------------------------------------------
   useEffect(() => {
     const fetchSongs = async () => {
@@ -52,21 +52,27 @@ export default function Songs() {
           title: "Failed to load songs",
           description: error.message,
         });
-      } else {
-        setSongs(data as Song[]);
+        return;
       }
+
+      const supabaseSongs = (data as Song[]) ?? [];
+
+      // Load uploaded songs from localStorage
+      const stored = localStorage.getItem("uploadedSongs");
+      const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
+
+      // Merge, giving precedence to uploaded songs (they have unique IDs)
+      setSongs([...uploadedSongs, ...supabaseSongs]);
     };
 
     fetchSongs();
 
-    // Real‑time subscription (optional but nice)
     const subscription = supabase
       .channel("public:songs")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "songs" },
-        (payload) => {
-          // Simple refresh – re‑fetch all songs
+        () => {
           fetchSongs();
         },
       )
@@ -140,7 +146,6 @@ export default function Songs() {
         description: error.message,
       });
     } else {
-      // Supabase returns the inserted row(s) with generated IDs
       setSongs((current) => [...(data as Song[]), ...current]);
       toast({
         title: "Song added",
