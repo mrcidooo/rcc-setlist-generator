@@ -144,7 +144,9 @@ export default function Songs() {
       }
 
       setSongs((cur) =>
-        cur.map((s) => (s.id === editingSong.id ? { ...s, ...payload, addedAt: s.addedAt } : s)),
+        cur.map((s) =>
+          s.id === editingSong.id ? { ...s, ...payload, addedAt: s.addedAt } : s,
+        ),
       );
       toast({ title: "Song updated", description: `${payload.title} updated.` });
     } else {
@@ -193,15 +195,23 @@ export default function Songs() {
   };
 
   // -----------------------------------------------------------------
-  // Edit flow
+  // Edit flow – robust tag handling
   // -----------------------------------------------------------------
   const handleEditSong = (song: Song) => {
     setEditingSong(song);
+
+    // Ensure tags are an array before joining for the input field
+    const tagsArray = Array.isArray(song.tags)
+      ? song.tags
+      : typeof song.tags === "string"
+        ? song.tags.split(",").map((t) => t.trim()).filter(Boolean)
+        : [];
+
     setForm({
       title: song.title,
       originalKey: song.originalKey,
       tempo: song.tempo ?? "",
-      tags: song.tags.join(", "),
+      tags: tagsArray.join(", "),
       notes: song.notes ?? "",
       lyrics: (song as any).lyrics ?? "",
     });
