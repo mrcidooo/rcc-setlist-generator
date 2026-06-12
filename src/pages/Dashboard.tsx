@@ -12,11 +12,7 @@ import {
 } from "lucide-react";
 
 const quickActions = [
-  {
-    title: "Upload Song",
-    icon: Plus,
-    description: "Add a new worship song",
-  },
+  // Upload action removed – now only three core actions remain
   {
     title: "Add Singer",
     icon: Users,
@@ -38,6 +34,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background p-4 pb-28">
       <div className="mx-auto max-w-6xl space-y-6">
+        {/* Header */}
         <header>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Worship Setlist Generator
@@ -47,6 +44,7 @@ export default function Dashboard() {
           </p>
         </header>
 
+        {/* Stats – now displayed in a 2‑column layout for better spacing */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-5">
@@ -97,34 +95,30 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Quick Actions – now a three‑item grid with larger buttons */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Button
+                key={action.title}
+                variant="secondary"
+                className="h-auto justify-start gap-3 rounded-xl p-4 text-left hover:scale-[1.02] transition-transform"
+              >
+                <Icon className="h-5 w-5 text-foreground" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold">{action.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {action.description}
+                  </span>
+                </div>
+              </Button>
+            );
+          })}
+        </section>
+
+        {/* Recent Activity */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-
-                return (
-                  <Button
-                    key={action.title}
-                    variant="secondary"
-                    className="h-auto justify-start gap-3 rounded-xl p-4 text-left"
-                  >
-                    <Icon className="h-5 w-5 text-foreground" />
-                    <span>
-                      <span className="block font-semibold">{action.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {action.description}
-                      </span>
-                    </span>
-                  </Button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
