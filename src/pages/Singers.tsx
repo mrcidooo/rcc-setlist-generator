@@ -30,7 +30,7 @@ type Singer = {
   id: string;
   name: string;
   nickname: string;
-  voiceType: VoiceType;
+  voiceType: VoiceType; // UI‑only camelCase
   notes: string;
 };
 
@@ -38,6 +38,15 @@ const voiceTypes: { value: VoiceType; label: string }[] = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
 ];
+
+// Convert DB record (snake_case) → UI record (camelCase)
+const mapSinger = (record: any): Singer => ({
+  id: record.id,
+  name: record.name,
+  nickname: record.nickname,
+  voiceType: record.voice_type as VoiceType,
+  notes: record.notes,
+});
 
 export default function Singers() {
   const [singers, setSingers] = useState<Singer[]>([]);
@@ -53,37 +62,33 @@ export default function Singers() {
 
   const { toast } = useToast();
 
-  // Load singers from Supabase
+  // Load singers – explicit column list matches DB schema
   useEffect(() => {
     const fetchSingers = async () => {
-      const { data, error } = await supabase.from("singers").select("*");
+      const { data, error } = await supabase
+        .from("singers")
+        .select("id, name, nickname, voice_type, notes, created_at");
+
       if (error) {
         console.error("Error loading singers:", error);
-        toast({
-          title: "Failed to load singers",
-          description: error.message,
-        });
+        toast({ title: "Failed to load singers", description: error.message });
         return;
       }
-      setSingers(data as Singer[]);
+
+      setSingers((data ?? []).map(mapSinger));
     };
     fetchSingers();
   }, []);
 
   const filteredSingers = useMemo(() => {
-    return singers.filter((singer) =>
-      singer.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    return singers.filter((s) =>
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [singers, searchTerm]);
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({
-      name: "",
-      nickname: "",
-      voiceType: "male",
-      notes: "",
-    });
+    setFormData({ name: "", nickname: "", voiceType: "male", notes: "" });
   };
 
   const openNewSingerForm = () => {
@@ -92,32 +97,36 @@ export default function Singers() {
   };
 
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    const { name, value } = e.target;
+    setFormData((c) => ({ ...c, [name]: value }));
   };
 
   const handleVoiceTypeChange = (value: VoiceType) => {
-    setFormData((current) => ({ ...current, voiceType: value }));
+    setFormData((c) => ({ ...c, voiceType: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast({
-        title: "Singer not added",
-        description: "Please enter a singer name first.",
-      });
+      toast({ title: "Singer not added", description: "Please enter a name." });
       return;
     }
+
+    const payload = {
+      name: formData.name.trim(),
+      nickname: formData.nickname.trim(),
+      voice_type: formData.voiceType,
+      notes: formData.notes.trim(),
+    };
 
     if (editingId) {
       // Update existing singer
       const { error } = await supabase
         .from("singers")
-        .update(formData)
+        .update(payload)
         .eq("id", editingId);
 
       if (error) {
@@ -125,33 +134,27 @@ export default function Singers() {
         return;
       }
 
-      setSingers((current) =>
-        current.map((s) => (s.id === editingId ? { ...s, ...formData } : s)),
+      setSingers((c) =>
+        c.map((s) => (s.id === editingId ? { ...s, ...formData } : s)),
       );
 
-      toast({
-        title: "Singer updated",
-        description: `${formData.name.trim()} was updated.`,
-      });
+      toast({ title: "Singer updated", description: `${formData.name} updated.` });
     } else {
       // Insert new singer
       const { data, error } = await supabase
         .from("singers")
-        .insert({ ...formData })
-        .select();
+        .insert(payload)
+        .select("id, name, nickname, voice_type, notes, created_at");
 
       if (error) {
         toast({ title: "Add failed", description: error.message });
         return;
       }
 
-      const newSinger = data?.[0] as Singer;
-      setSingers((current) => [newSinger, ...current]);
+      const newSinger = mapSinger(data?.[0]);
+      setSingers((c) => [newSinger, ...c]);
 
-      toast({
-        title: "Singer added",
-        description: `${newSinger.name} was added to your team.`,
-      });
+      toast({ title: "Singer added", description: `${newSinger.name} added.` });
     }
 
     resetForm();
@@ -181,11 +184,8 @@ export default function Singers() {
       return;
     }
 
-    setSingers((current) => current.filter((s) => s.id !== singer.id));
-    toast({
-      title: "Singer removed",
-      description: `${singer.name} was removed from your team.`,
-    });
+    setSingers((c) => c.filter((s) => s.id !== singer.id));
+    toast({ title: "Singer removed", description: `${singer.name} removed.` });
   };
 
   return (
@@ -207,6 +207,7 @@ export default function Singers() {
           </Button>
         </header>
 
+        {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
             <CardContent className="p-5">
@@ -232,6 +233,7 @@ export default function Singers() {
           </Card>
         </div>
 
+        {/* Form */}
         {isFormOpen && (
           <Card>
             <CardHeader>
@@ -317,14 +319,13 @@ export default function Singers() {
           </Card>
         )}
 
+        {/* List */}
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <CardTitle>Team Members</CardTitle>
-                <CardDescription>
-                  Search and manage your worship singers.
-                </CardDescription>
+                <CardDescription>Search and manage your worship singers.</CardDescription>
               </div>
 
               <div className="w-full sm:w-72">
@@ -361,9 +362,7 @@ export default function Singers() {
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">
-                          {singer.name}
-                        </h3>
+                        <h3 className="font-semibold text-foreground">{singer.name}</h3>
                         <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
                           <Badge variant="secondary">
                             {singer.voiceType === "male" ? "Male" : "Female"}
