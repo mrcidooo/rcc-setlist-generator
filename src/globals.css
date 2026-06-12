@@ -112,6 +112,20 @@ button:not([disabled]),
   }
 }
 
+/* Kick animation – a quick upward bounce */
+@keyframes kick {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-6px); }
+  60%  { transform: translateY(0); }
+  100% { transform: translateY(0); }
+}
+
+/* Apply the animation via utility class */
+.animate-kick {
+  animation: kick 0.4s ease-out;
+}
+
+/* Utilities */
 @layer utilities {
   /* Spatial UI Glassmorphism & Soft Neumorphism */
   .neumorphic-inset {

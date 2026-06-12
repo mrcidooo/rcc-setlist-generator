@@ -135,9 +135,9 @@ export default function Index() {
         {/* Dynamic Neumorphic Stats */}
         <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
 
-        {/* Quick Workspaces */}
+        {/* Quick Workspaces – redesigned */}
         <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 px-1">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
             Quick Workspaces
           </h2>
           <QuickActions actions={quickActions as any} onAction={handleQuickAction} />
@@ -147,7 +147,7 @@ export default function Index() {
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
       </div>
 
-      {/* Install to Device button – shown only when supported */}
+      {/* Install to Device button – always shown at the bottom if supported */}
       {canInstall && (
         <div className="mt-6 flex justify-center">
           <Button
@@ -155,7 +155,7 @@ export default function Index() {
             onClick={async () => {
               const outcome = await promptInstall();
               if (outcome === "accepted") {
-                toast({ title: "App installed!", description: "Enjoy using VocalFlow offline." });
+                toast({ title: "App installed!", description: "Enjoy using RCC Setlist Generator offline." });
               } else {
                 toast({ title: "Install cancelled", description: "You can install later from the browser menu." });
               }

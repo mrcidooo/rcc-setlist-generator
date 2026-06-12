@@ -26,18 +26,19 @@ export const Header = () => {
   }, [ripple]);
 
   return (
-    <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3 border border-white/20 dark:border-white/5">
+    <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
       <div className="flex items-center justify-between">
         {/* Logo / Identity */}
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] animate-[kick_0.4s_ease-out]">
+            {/* Kick animation keyframes are defined in globals.css */}
             <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              VocalFlow
+              RCC Setlist Generator
             </h1>
             <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase opacity-80">
               Worship Space
