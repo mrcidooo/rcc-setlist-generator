@@ -1,0 +1,90 @@
+"use client";
+
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  Music,
+  Users,
+  Calendar,
+  List,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { to: "/", label: "Home", icon: Home },
+  { to: "/songs", label: "Songs", icon: Music },
+  { to: "/setlists", label: "Setlists", icon: Calendar, highlight: true }, // Highlight central action button
+  { to: "/singers", label: "Singers", icon: Users },
+  { to: "/singer-keys", label: "Keys", icon: List },
+];
+
+type BottomNavigationProps = {
+  className?: string;
+};
+
+export const BottomNavigation = ({ className }: BottomNavigationProps) => {
+  const location = useLocation();
+
+  return (
+    <div className={cn("fixed inset-x-0 bottom-4 flex justify-center px-4 pointer-events-none", className)}>
+      <nav
+        className="pointer-events-auto flex items-end justify-between w-full max-w-md gap-1 rounded-[32px] bg-white/70 dark:bg-card/60 p-2 border border-white/20 dark:border-white/5 shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:shadow-[0_12px_50px_rgba(0,0,0,0.4)]"
+      >
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.to;
+          const Icon = item.icon;
+
+          if (item.highlight) {
+            return (
+              <Link key={item.to} to={item.to} className="relative flex flex-col items-center -top-4">
+                {/* Glowing ring under the central floating action button */}
+                <div className={cn(
+                  "absolute h-14 w-14 rounded-full bg-indigo-500/30 blur-md transition-opacity duration-300",
+                  isActive ? "opacity-100" : "opacity-0"
+                )} />
+                <Button
+                  variant="default"
+                  className={cn(
+                    "h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.5)] border border-white/10 hover:scale-105 active:scale-95 transition-transform duration-300"
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Icon className="h-6 w-6 text-white" />
+                </Button>
+                <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mt-1 uppercase tracking-wider scale-90">{item.label}</span>
+              </Link>
+            );
+          }
+
+          return (
+            <Link key={item.to} to={item.to} className="flex-1 flex flex-col items-center">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 h-12 w-12 rounded-[20px] transition-all duration-300 relative bg-transparent",
+                  isActive 
+                    ? "text-indigo-500 dark:text-indigo-400 scale-105" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {/* Indicator dot */}
+                {isActive && (
+                  <span className="absolute top-1.5 h-1 w-1 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse" />
+                )}
+                <Icon className="h-5 w-5" />
+              </Button>
+              <span className={cn(
+                "text-[10px] font-bold transition-colors duration-300 mb-1",
+                isActive ? "text-indigo-500 dark:text-indigo-400" : "text-muted-foreground"
+              )}>
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+};
