@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -32,6 +32,9 @@ export default function SetlistBuilder() {
   // Dialog visibility state
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Ref to the song‑order list so we can scroll to it after adding a track
+  const songListRef = useRef<HTMLDivElement>(null);
+
   // Open dialog when the user clicks the “Add Song to Setlist” button in the details form
   const openAddSongDialog = () => {
     setDialogOpen(true);
@@ -42,6 +45,16 @@ export default function SetlistBuilder() {
   const closeAddSongDialog = () => {
     setDialogOpen(false);
     if (isAddingSong) toggleSongForm();
+  };
+
+  // Wrap the add‑song handler so we can close the dialog **and** scroll to the list
+  const handleAddSongAndScroll = () => {
+    handleAddSong();          // adds the track to the setlist state
+    closeAddSongDialog();     // closes the modal
+    // Give React a tick before scrolling (state updates are async)
+    setTimeout(() => {
+      songListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
   };
 
   return (
@@ -85,18 +98,18 @@ export default function SetlistBuilder() {
         onFormChange={handleSongFormChange}
         onSongChange={handleSongChange}
         onSingerChange={handleSingerChange}
-        onAddSong={() => {
-          handleAddSong();
-          closeAddSongDialog();
-        }}
+        onAddSong={handleAddSongAndScroll}
         onCancel={closeAddSongDialog}
       />
 
-      <SetlistSongList
-        songs={setlist.songs}
-        onRemoveSong={handleRemoveSong}
-        onMoveSong={moveSong}
-      />
+      {/* Song‑order list – wrapped with a ref for scrolling */}
+      <div ref={songListRef}>
+        <SetlistSongList
+          songs={setlist.songs}
+          onRemoveSong={handleRemoveSong}
+          onMoveSong={moveSong}
+        />
+      </div>
 
       <div className="pt-2">
         <SetlistBuilderActions
