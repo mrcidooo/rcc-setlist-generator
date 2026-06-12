@@ -108,15 +108,19 @@ button,
   }
 }
 
-/* Ripple animation utilities */
+/* Ripple animation utilities – smoother, slower */
 @layer utilities {
   @keyframes ripple {
+    from {
+      transform: scale(0);
+      opacity: 0.5;
+    }
     to {
       transform: scale(4);
       opacity: 0;
     }
   }
-  .animate-\[ripple_0\.3s_ease-out\] {
-    animation: ripple 0.3s ease-out forwards;
+  .animate-\[ripple_0\.6s_ease-out\] {
+    animation: ripple 0.6s ease-out forwards;
   }
 }
