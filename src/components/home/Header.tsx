@@ -37,6 +37,9 @@ export const Header = () => {
     }
   }, [screenRipple]);
 
+  // Theme‑aware ring colour for the logo
+  const logoRing = isDark ? "ring-2 ring-indigo-600/30" : "ring-2 ring-indigo-300/30";
+
   return (
     <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
       {/* Full‑screen ripple overlay */}
@@ -47,9 +50,21 @@ export const Header = () => {
       <div className="flex items-center justify-between">
         {/* Logo / Identity */}
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.5)] animate-[kick_0.4s_ease-out]">
+          <div
+            className={`
+              flex h-11 w-11 items-center justify-center rounded-2xl
+              bg-gradient-to-tr from-indigo-500 to-purple-600
+              shadow-[0_0_15px_rgba(99,102,241,0.5)]
+              animate-[kick_0.4s_ease-out] ${logoRing}
+            `}
+          >
             <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+              />
             </svg>
           </div>
           <div>
