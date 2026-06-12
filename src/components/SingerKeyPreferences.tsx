@@ -63,12 +63,11 @@ export default function SingerKeyPreferences() {
       if (storedMatrix) {
         try {
           const parsed = JSON.parse(storedMatrix);
-          // Normalize existing saved keys to uppercase
           const normalized: Record<string, Record<string, string>> = {};
           Object.keys(parsed).forEach((songId) => {
             normalized[songId] = {};
             Object.keys(parsed[songId]).forEach((singerId) => {
-              normalized[songId][singerId] = String(parsed[songId][singerId] || "").toUpperCase();
+              normalized[songId][singerId] = String(parsed[songId][singerId] || "");
             });
           });
           setSingerKeyData(normalized);
@@ -82,17 +81,15 @@ export default function SingerKeyPreferences() {
   }, []);
 
   const getKeyForSinger = (songId: string, singerId: string) => {
-    const rawVal = singerKeyData[songId]?.[singerId] ?? "";
-    return rawVal.toUpperCase();
+    return singerKeyData[songId]?.[singerId] ?? "";
   };
 
   const handleKeyChange = (songId: string, singerId: string, value: string) => {
-    const uppercaseValue = value.toUpperCase();
     const updated = {
       ...singerKeyData,
       [songId]: {
         ...(singerKeyData[songId] ?? {}),
-        [singerId]: uppercaseValue,
+        [singerId]: value,
       },
     };
     setSingerKeyData(updated);

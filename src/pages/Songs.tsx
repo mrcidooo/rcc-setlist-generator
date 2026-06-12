@@ -75,7 +75,7 @@ export default function Songs() {
   }, []);
 
   const availableKeys = useMemo(() => {
-    const keys = Array.from(new Set(songs.map((s) => (s.originalKey || "").toUpperCase()))).sort();
+    const keys = Array.from(new Set(songs.map((s) => (s.originalKey || "").trim()))).sort();
     return ["all", ...keys];
   }, [songs]);
 
@@ -85,7 +85,7 @@ export default function Songs() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesKey =
-        selectedKey === "all" || (song.originalKey || "").toUpperCase() === selectedKey.toUpperCase();
+        selectedKey === "all" || (song.originalKey || "").trim() === selectedKey;
       return matchesSearch && matchesKey;
     });
   }, [songs, searchTerm, selectedKey]);
@@ -96,7 +96,7 @@ export default function Songs() {
     const { name, value } = e.target;
     setForm((c) => ({
       ...c,
-      [name]: name === "originalKey" ? value.toUpperCase() : value,
+      [name]: value,
     }));
   };
 
@@ -118,7 +118,7 @@ export default function Songs() {
 
     const payload = {
       title: form.title.trim(),
-      originalKey: form.originalKey.trim().toUpperCase(),
+      originalKey: form.originalKey.trim(),
       tempo: form.tempo.trim(),
       tags: parsedTags,
       notes: form.notes.trim(),
@@ -188,7 +188,7 @@ export default function Songs() {
 
     setForm({
       title: song.title,
-      originalKey: (song.originalKey || "").toUpperCase(),
+      originalKey: song.originalKey || "",
       tempo: song.tempo ?? "",
       tags: tagsArray.join(", "),
       notes: song.notes ?? "",
@@ -292,7 +292,7 @@ export default function Songs() {
                     name="originalKey"
                     value={form.originalKey}
                     onChange={handleInputChange}
-                    placeholder="e.g., C, D, G"
+                    placeholder="e.g., C, D, Bb, Eb"
                     className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
                     required
                   />
