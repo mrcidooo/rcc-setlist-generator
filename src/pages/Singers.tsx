@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Plus, Search, Trash2, Users } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 type VoiceType = "male" | "female";
 
@@ -33,37 +34,13 @@ type Singer = {
   notes: string;
 };
 
-const initialSingers: Singer[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    nickname: "Johnny",
-    voiceType: "male",
-    notes: "Tenor",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    nickname: "Sara",
-    voiceType: "female",
-    notes: "Alto",
-  },
-  {
-    id: "3",
-    name: "Mike Davis",
-    nickname: "",
-    voiceType: "male",
-    notes: "Bass",
-  },
-];
-
 const voiceTypes: { value: VoiceType; label: string }[] = [
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
 ];
 
 export default function Singers() {
-  const [singers, setSingers] = useState<Singer[]>(initialSingers);
+  const [singers, setSingers] = useState<Singer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,6 +52,23 @@ export default function Singers() {
   });
 
   const { toast } = useToast();
+
+  // Load singers from Supabase
+  useEffect(() => {
+    const fetchSingers = async () => {
+      const { data, error } = await supabase.from("singers").select("*");
+      if (error) {
+        console.error("Error loading singers:", error);
+        toast({
+          title: "Failed to load singers",
+          description: error.message,
+        });
+        return;
+      }
+      setSingers(data as Singer[]);
+    };
+    fetchSingers();
+  }, []);
 
   const filteredSingers = useMemo(() => {
     return singers.filter((singer) =>
@@ -108,7 +102,7 @@ export default function Singers() {
     setFormData((current) => ({ ...current, voiceType: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!formData.name.trim()) {
@@ -120,10 +114,19 @@ export default function Singers() {
     }
 
     if (editingId) {
+      // Update existing singer
+      const { error } = await supabase
+        .from("singers")
+        .update(formData)
+        .eq("id", editingId);
+
+      if (error) {
+        toast({ title: "Update failed", description: error.message });
+        return;
+      }
+
       setSingers((current) =>
-        current.map((singer) =>
-          singer.id === editingId ? { ...singer, ...formData } : singer,
-        ),
+        current.map((s) => (s.id === editingId ? { ...s, ...formData } : s)),
       );
 
       toast({
@@ -131,11 +134,18 @@ export default function Singers() {
         description: `${formData.name.trim()} was updated.`,
       });
     } else {
-      const newSinger: Singer = {
-        id: Date.now().toString(),
-        ...formData,
-      };
+      // Insert new singer
+      const { data, error } = await supabase
+        .from("singers")
+        .insert({ ...formData })
+        .select();
 
+      if (error) {
+        toast({ title: "Add failed", description: error.message });
+        return;
+      }
+
+      const newSinger = data?.[0] as Singer;
       setSingers((current) => [newSinger, ...current]);
 
       toast({
@@ -159,17 +169,19 @@ export default function Singers() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (singer: Singer) => {
+  const handleDelete = async (singer: Singer) => {
     const confirmed = window.confirm(
       `Delete ${singer.name}? This will remove them from your worship team.`,
     );
-
     if (!confirmed) return;
 
-    setSingers((current) =>
-      current.filter((currentSinger) => currentSinger.id !== singer.id),
-    );
+    const { error } = await supabase.from("singers").delete().eq("id", singer.id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message });
+      return;
+    }
 
+    setSingers((current) => current.filter((s) => s.id !== singer.id));
     toast({
       title: "Singer removed",
       description: `${singer.name} was removed from your team.`,
@@ -206,7 +218,7 @@ export default function Singers() {
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground">Male Voices</p>
               <p className="text-3xl font-bold">
-                {singers.filter((singer) => singer.voiceType === "male").length}
+                {singers.filter((s) => s.voiceType === "male").length}
               </p>
             </CardContent>
           </Card>
@@ -214,7 +226,7 @@ export default function Singers() {
             <CardContent className="p-5">
               <p className="text-sm text-muted-foreground">Female Voices</p>
               <p className="text-3xl font-bold">
-                {singers.filter((singer) => singer.voiceType === "female").length}
+                {singers.filter((s) => s.voiceType === "female").length}
               </p>
             </CardContent>
           </Card>
@@ -264,9 +276,9 @@ export default function Singers() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {voiceTypes.map((voiceType) => (
-                          <SelectItem key={voiceType.value} value={voiceType.value}>
-                            {voiceType.label}
+                        {voiceTypes.map((vt) => (
+                          <SelectItem key={vt.value} value={vt.value}>
+                            {vt.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -283,22 +295,6 @@ export default function Singers() {
                       placeholder="e.g., Tenor, Alto, Lead"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="singer-bio">Additional Notes</Label>
-                  <Textarea
-                    id="singer-bio"
-                    value={formData.notes}
-                    onChange={(event) =>
-                      setFormData((current) => ({
-                        ...current,
-                        notes: event.target.value,
-                      }))
-                    }
-                    placeholder="Availability, strengths, or special instructions"
-                    rows={3}
-                  />
                 </div>
 
                 <div className="flex justify-end gap-3">
@@ -336,7 +332,7 @@ export default function Singers() {
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search singers..."
                     className="pl-9"
                   />
@@ -379,11 +375,7 @@ export default function Singers() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(singer)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(singer)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </Button>
