@@ -1,33 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import AddSetlistSongForm from "./AddSetlistSongForm";
 import { supabase } from "@/lib/supabaseClient";
-
-type Song = {
-  id: string;
-  title: string;
-  originalKey: string;
-};
-
-type Singer = {
-  id: string;
-  name: string;
-};
+import type { AvailableSong, AvailableSinger, SetlistFormData } from "./types";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  formData: any;
+  formData: SetlistFormData;
   recommendedKey: string;
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSongChange: (value: string) => void;
   onSingerChange: (value: string) => void;
   onAddSong: () => void;
   onCancel: () => void;
+  /** Real data from Supabase */
+  songs: AvailableSong[];
+  singers: AvailableSinger[];
 };
 
 export default function SetlistAddSongDialog({
@@ -40,11 +39,13 @@ export default function SetlistAddSongDialog({
   onSingerChange,
   onAddSong,
   onCancel,
+  songs,
+  singers,
 }: Props) {
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [singers, setSingers] = useState<Singer[]>([]);
+  const [localSongs, setLocalSongs] = useState<AvailableSong[]>([]);
+  const [localSingers, setLocalSingers] = useState<AvailableSinger[]>([]);
 
-  // Load real data from Supabase when dialog opens
+  // Load real data from Supabase when dialog opens (fallback to passed props)
   useEffect(() => {
     const loadData = async () => {
       const { data: songData, error: songErr } = await supabase
@@ -58,7 +59,9 @@ export default function SetlistAddSongDialog({
           title: r.title,
           originalKey: r.original_key,
         }));
-        setSongs(mapped);
+        setLocalSongs(mapped);
+      } else {
+        setLocalSongs(songs);
       }
 
       const { data: singerData, error: singerErr } = await supabase
@@ -71,11 +74,14 @@ export default function SetlistAddSongDialog({
           id: r.id,
           name: r.name,
         }));
-        setSingers(mapped);
+        setLocalSingers(mapped);
+      } else {
+        setLocalSingers(singers);
       }
     };
+
     if (open) loadData();
-  }, [open]);
+  }, [open, songs, singers]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,7 +104,7 @@ export default function SetlistAddSongDialog({
           </Button>
         </DialogHeader>
 
-        {/* Pass real songs & singers to the form – the form now handles type‑ahead via datalist */}
+        {/* Pass real songs & singers to the form */}
         <AddSetlistSongForm
           formData={formData}
           recommendedKey={recommendedKey}
@@ -107,8 +113,8 @@ export default function SetlistAddSongDialog({
           onSingerChange={onSingerChange}
           onAddSong={onAddSong}
           onCancel={onCancel}
-          songs={songs}
-          singers={singers}
+          songs={localSongs}
+          singers={localSingers}
         />
       </DialogContent>
     </Dialog>

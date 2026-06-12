@@ -9,7 +9,7 @@ import {
   getRecommendedKey,
   initialSetlist,
 } from "./constants";
-import type { MoveDirection, Setlist, SetlistFormData } from "./types";
+import type { MoveDirection, Setlist, SetlistFormData, AvailableSong, AvailableSinger } from "./types";
 import { supabase } from "@/lib/supabaseClient";
 
 export function useSetlistBuilder() {
@@ -51,11 +51,9 @@ export function useSetlistBuilder() {
 
   useEffect(() => {
     const loadMatrix = async () => {
-      // Try to get the authenticated user first
       const { data: authUser } = await supabase.auth.getUser();
       let userId = authUser?.user?.id;
 
-      // If no logged‑in user, generate / reuse an anonymous UUID
       if (!userId) {
         const storageKey = "vocal_key_user";
         let anonId = localStorage.getItem(storageKey);
@@ -75,7 +73,6 @@ export function useSetlistBuilder() {
       if (!error && matrixData?.matrix) {
         setKeyMatrix(matrixData.matrix as Record<string, Record<string, string>>);
       } else {
-        // Fallback to an empty matrix if none exists
         setKeyMatrix({});
       }
     };
@@ -84,9 +81,52 @@ export function useSetlistBuilder() {
   }, []);
 
   // -----------------------------------------------------------------
-  // Helpers (unchanged logic, just moved into this file)
+  // Load real songs & singers from Supabase (used for adding tracks)
   // -----------------------------------------------------------------
-  // Compute the recommended key from the loaded matrix; fall back to the static helper
+  const [songs, setSongs] = useState<AvailableSong[]>([]);
+  const [singers, setSingers] = useState<AvailableSinger[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const { data: songData, error: songErr } = await supabase
+        .from("songs")
+        .select("id, title, original_key")
+        .order("title");
+
+      if (!songErr && songData) {
+        const mapped = (songData as any[]).map((r) => ({
+          id: r.id,
+          title: r.title,
+          originalKey: r.original_key,
+        }));
+        setSongs(mapped);
+      } else {
+        // fallback to static list if Supabase fails
+        setSongs(availableSongs);
+      }
+
+      const { data: singerData, error: singerErr } = await supabase
+        .from("singers")
+        .select("id, name")
+        .order("name");
+
+      if (!singerErr && singerData) {
+        const mapped = (singerData as any[]).map((r) => ({
+          id: r.id,
+          name: r.name,
+        }));
+        setSingers(mapped);
+      } else {
+        setSingers(availableSingers);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // -----------------------------------------------------------------
+  // Helpers
+  // -----------------------------------------------------------------
   const recommendedKey =
     keyMatrix[formData.songId]?.[formData.singerId] ??
     getRecommendedKey(formData.songId, formData.singerId);
@@ -104,7 +144,7 @@ export function useSetlistBuilder() {
   };
 
   const handleSongChange = (value: string) => {
-    const song = availableSongs.find((item) => item.id === value);
+    const song = songs.find((s) => s.id === value);
     const recommendedSongKey = keyMatrix[value]?.[formData.singerId] ?? getRecommendedKey(value, formData.singerId);
 
     setFormData((current) => ({
@@ -125,7 +165,7 @@ export function useSetlistBuilder() {
   };
 
   // -----------------------------------------------------------------
-  // Add song (unchanged)
+  // Add song (uses real songs & singers)
   // -----------------------------------------------------------------
   const handleAddSong = () => {
     if (!formData.songId || !formData.singerId) {
@@ -136,10 +176,13 @@ export function useSetlistBuilder() {
       return;
     }
 
-    const song = availableSongs.find((item) => item.id === formData.songId);
-    const singer = availableSingers.find((item) => item.id === formData.singerId);
+    const song = songs.find((s) => s.id === formData.songId);
+    const singer = singers.find((s) => s.id === formData.singerId);
 
-    if (!song || !singer) return;
+    if (!song || !singer) {
+      toast({ title: "Song not added", description: "Selected song or singer not found." });
+      return;
+    }
 
     const recommendedSongKey = keyMatrix[song.id]?.[singer.id] ?? getRecommendedKey(song.id, singer.id);
 
@@ -171,7 +214,7 @@ export function useSetlistBuilder() {
   };
 
   // -----------------------------------------------------------------
-  // Remove / move songs (unchanged)
+  // Remove / move songs
   // -----------------------------------------------------------------
   const handleRemoveSong = (id: string) => {
     setSetlist((current) => ({
@@ -184,19 +227,19 @@ export function useSetlistBuilder() {
 
   const moveSong = (id: string, direction: MoveDirection) => {
     setSetlist((current) => {
-      const songs = [...current.songs];
-      const index = songs.findIndex((song) => song.id === id);
+      const songsCopy = [...current.songs];
+      const index = songsCopy.findIndex((song) => song.id === id);
       const nextIndex = direction === "up" ? index - 1 : index + 1;
 
-      if (index < 0 || nextIndex < 0 || nextIndex >= songs.length) {
+      if (index < 0 || nextIndex < 0 || nextIndex >= songsCopy.length) {
         return current;
       }
 
-      [songs[index], songs[nextIndex]] = [songs[nextIndex], songs[index]];
+      [songsCopy[index], songsCopy[nextIndex]] = [songsCopy[nextIndex], songsCopy[index]];
 
       return {
         ...current,
-        songs: songs.map((song, songIndex) => ({
+        songs: songsCopy.map((song, songIndex) => ({
           ...song,
           order: songIndex + 1,
         })),
@@ -271,6 +314,8 @@ export function useSetlistBuilder() {
     formData,
     recommendedKey,
     isAddingSong,
+    songs,
+    singers,
     handleSetlistChange,
     handleSongFormChange,
     handleSongChange,

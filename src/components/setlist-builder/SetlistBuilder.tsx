@@ -10,6 +10,7 @@ import SetlistDetailsForm from "./SetlistDetailsForm";
 import SetlistSongList from "./SetlistSongList";
 import { useSetlistBuilder } from "./useSetlistBuilder";
 import { Sparkles, Library } from "lucide-react";
+import type { AvailableSong, AvailableSinger } from "./types";
 
 export default function SetlistBuilder() {
   const {
@@ -17,6 +18,8 @@ export default function SetlistBuilder() {
     formData,
     recommendedKey,
     isAddingSong,
+    songs,
+    singers,
     handleSetlistChange,
     handleSongFormChange,
     handleSongChange,
@@ -35,10 +38,8 @@ export default function SetlistBuilder() {
   // Ref to the song‑order list so we can scroll to it after adding a track
   const songListRef = useRef<HTMLDivElement>(null);
 
-  // Open dialog when the user clicks the “Add Song to Setlist” button in the details form
   const openAddSongDialog = () => {
     setDialogOpen(true);
-    // Ensure internal flag is true so the form data is ready
     if (!isAddingSong) toggleSongForm();
   };
 
@@ -47,12 +48,10 @@ export default function SetlistBuilder() {
     if (isAddingSong) toggleSongForm();
   };
 
-  // Wrap the add‑song handler so we can close the dialog **and** scroll to the list
   const handleAddSongAndScroll = () => {
-    handleAddSong();          // adds the track to the setlist state
-    closeAddSongDialog();     // closes the modal
+    handleAddSong();
+    closeAddSongDialog();
 
-    // Give React a tick before scrolling (state updates are async)
     setTimeout(() => {
       songListRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -86,11 +85,9 @@ export default function SetlistBuilder() {
             target: { name: "serviceType", value },
           } as React.ChangeEvent<HTMLInputElement>)
         }
-        // Replace the inline toggle with opening the dialog
         onToggleAddingSong={openAddSongDialog}
       />
 
-      {/* Dialog that contains the searchable song picker and the rest of the form */}
       <SetlistAddSongDialog
         open={dialogOpen}
         onOpenChange={(open) => {
@@ -104,11 +101,11 @@ export default function SetlistBuilder() {
         onSingerChange={handleSingerChange}
         onAddSong={handleAddSongAndScroll}
         onCancel={closeAddSongDialog}
+        songs={songs as AvailableSong[]}
+        singers={singers as AvailableSinger[]}
       />
 
-      {/* Song‑order list – wrapped with a ref for scrolling */}
       <div ref={songListRef}>
-        {/* Adding a key forces React to re‑render the list when its length changes */}
         <SetlistSongList
           key={setlist.songs.length}
           songs={setlist.songs}
