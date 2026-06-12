@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/home/Header";
 import { DashboardStats } from "@/components/home/DashboardStats";
-import { QuickActions } from "@/components/home/QuickActions";
 import { TeamMembers } from "@/components/home/TeamMembers";
 import { UserPlus, Library, FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -132,14 +131,6 @@ export default function Index() {
       <div className="flex-1 space-y-6">
         {/* Dynamic Neumorphic Stats */}
         <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
-
-        {/* Quick Workspaces – tighter heading spacing */}
-        <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-            Quick Workspaces
-          </h2>
-          <QuickActions actions={quickActions as any} onAction={handleQuickAction} />
-        </section>
 
         {/* Team profiles */}
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
