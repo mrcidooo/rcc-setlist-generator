@@ -4,12 +4,12 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import AddSetlistSongForm from "./AddSetlistSongForm";
+import SetlistAddSongDialog from "./SetlistAddSongDialog";
 import SetlistBuilderActions from "./SetlistBuilderActions";
 import SetlistDetailsForm from "./SetlistDetailsForm";
 import SetlistSongList from "./SetlistSongList";
 import { useSetlistBuilder } from "./useSetlistBuilder";
-import { Sparkles, Library, Plus } from "lucide-react";
+import { Sparkles, Library } from "lucide-react";
 
 export default function SetlistBuilder() {
   const {
@@ -29,8 +29,20 @@ export default function SetlistBuilder() {
     toggleSongForm,
   } = useSetlistBuilder();
 
-  // Local state is no longer needed for a dialog
-  // The floating button will simply toggle the inline form via `toggleSongForm`
+  // Dialog visibility state
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Open dialog when the user clicks the “Add Song to Setlist” button in the details form
+  const openAddSongDialog = () => {
+    setDialogOpen(true);
+    // Ensure internal flag is true so the form data is ready
+    if (!isAddingSong) toggleSongForm();
+  };
+
+  const closeAddSongDialog = () => {
+    setDialogOpen(false);
+    if (isAddingSong) toggleSongForm();
+  };
 
   return (
     <div className="min-h-screen bg-transparent p-4 pb-32 max-w-4xl mx-auto space-y-6 relative">
@@ -57,21 +69,28 @@ export default function SetlistBuilder() {
             target: { name: "serviceType", value },
           } as React.ChangeEvent<HTMLInputElement>)
         }
-        onToggleAddingSong={toggleSongForm}
+        // Replace the inline toggle with opening the dialog
+        onToggleAddingSong={openAddSongDialog}
       />
 
-      {/* Inline form appears directly when `isAddingSong` is true */}
-      {isAddingSong && (
-        <AddSetlistSongForm
-          formData={formData}
-          recommendedKey={recommendedKey}
-          onFormChange={handleSongFormChange}
-          onSongChange={handleSongChange}
-          onSingerChange={handleSingerChange}
-          onAddSong={handleAddSong}
-          onCancel={toggleSongForm}
-        />
-      )}
+      {/* Dialog that contains the searchable song picker and the rest of the form */}
+      <SetlistAddSongDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open && isAddingSong) toggleSongForm();
+        }}
+        formData={formData}
+        recommendedKey={recommendedKey}
+        onFormChange={handleSongFormChange}
+        onSongChange={handleSongChange}
+        onSingerChange={handleSingerChange}
+        onAddSong={() => {
+          handleAddSong();
+          closeAddSongDialog();
+        }}
+        onCancel={closeAddSongDialog}
+      />
 
       <SetlistSongList
         songs={setlist.songs}
@@ -85,17 +104,6 @@ export default function SetlistBuilder() {
           onGeneratePDF={handleGeneratePDF}
         />
       </div>
-
-      {/* Floating “Add Song” button – now just toggles the inline form */}
-      {!isAddingSong && (
-        <button
-          onClick={toggleSongForm}
-          className="fixed bottom-20 right-4 flex items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95 transition-transform duration-200 p-3"
-          aria-label="Add Song to Setlist"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      )}
     </div>
   );
 }
