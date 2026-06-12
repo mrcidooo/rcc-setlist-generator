@@ -120,9 +120,33 @@ button:not([disabled]),
   100% { transform: translateY(0); }
 }
 
-/* Apply the animation via utility class */
+/* Full‑screen ripple animation for dark‑mode toggle */
+@keyframes ripple-screen {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  80% {
+    transform: scale(3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* Utility classes */
 .animate-kick {
   animation: kick 0.4s ease-out;
+}
+.animate-ripple {
+  animation: ripple 0.3s ease-out;
+}
+
+/* Apply the screen ripple animation via a utility class */
+.ripple-screen {
+  animation: ripple-screen 0.6s ease-out forwards;
 }
 
 /* Utilities */
