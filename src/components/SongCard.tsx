@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FileText, Music, Trash2 } from "lucide-react";
+import { FileText, Music, Trash2, Edit } from "lucide-react";
 
 export type Song = {
   id: string;
@@ -25,10 +25,15 @@ type SongCardProps = {
   song: Song;
   onPreview: (song: Song) => void;
   onDelete: (songId: string) => void;
+  onEdit: (song: Song) => void; // new prop
 };
 
-export const SongCard = ({ song, onPreview, onDelete }: SongCardProps) => {
-  // Ensure tags is always an array to avoid runtime errors
+export const SongCard = ({
+  song,
+  onPreview,
+  onDelete,
+  onEdit,
+}: SongCardProps) => {
   const tagsArray = Array.isArray(song.tags) ? song.tags : [];
 
   return (
@@ -41,6 +46,14 @@ export const SongCard = ({ song, onPreview, onDelete }: SongCardProps) => {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => onPreview(song)}>
               Preview
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Edit ${song.title}`}
+              onClick={() => onEdit(song)}
+            >
+              <Edit className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"

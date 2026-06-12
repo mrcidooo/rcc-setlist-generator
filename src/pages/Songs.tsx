@@ -31,39 +31,35 @@ export default function Songs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKey, setSelectedKey] = useState("all");
   const [isAddingSong, setIsAddingSong] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [form, setForm] = useState({
     title: "",
     originalKey: "",
     tempo: "",
     tags: "",
     notes: "",
-    lyrics: "", // new field for lyrics with chords
+    lyrics: "",
   });
 
   const { toast } = useToast();
 
   // -----------------------------------------------------------------
-  // Load songs from Supabase and localStorage (real‑time)
+  // Load songs (real‑time)
   // -----------------------------------------------------------------
   useEffect(() => {
     const fetchSongs = async () => {
       const { data, error } = await supabase.from("songs").select("*");
       if (error) {
         console.error("Error loading songs:", error);
-        toast({
-          title: "Failed to load songs",
-          description: error.message,
-        });
+        toast({ title: "Failed to load songs", description: error.message });
         return;
       }
 
       const supabaseSongs = (data as Song[]) ?? [];
 
-      // Load uploaded songs from localStorage
       const stored = localStorage.getItem("uploadedSongs");
       const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
 
-      // Merge, giving precedence to uploaded songs (they have unique IDs)
       setSongs([...uploadedSongs, ...supabaseSongs]);
     };
 
@@ -74,22 +70,18 @@ export default function Songs() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "songs" },
-        () => {
-          fetchSongs();
-        },
+        () => fetchSongs(),
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    return () => supabase.removeChannel(subscription);
   }, []);
 
   // -----------------------------------------------------------------
   // Helpers
   // -----------------------------------------------------------------
   const availableKeys = useMemo(() => {
-    const keys = Array.from(new Set(songs.map((song) => song.originalKey))).sort();
+    const keys = Array.from(new Set(songs.map((s) => s.originalKey))).sort();
     return ["all", ...keys];
   }, [songs]);
 
@@ -105,57 +97,70 @@ export default function Songs() {
   }, [songs, searchTerm, selectedKey]);
 
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    const { name, value } = e.target;
+    setForm((c) => ({ ...c, [name]: value }));
   };
 
   // -----------------------------------------------------------------
-  // Add new song (writes to Supabase)
+  // Add / Update song
   // -----------------------------------------------------------------
-  const handleAddSong = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleAddOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
     if (!form.title.trim() || !form.originalKey.trim()) {
       toast({
-        title: "Song not added",
-        description: "Please enter at least a song title and original key.",
+        title: "Song not saved",
+        description: "Title and original key are required.",
       });
       return;
     }
 
     const parsedTags = form.tags
       .split(",")
-      .map((tag) => tag.trim())
+      .map((t) => t.trim())
       .filter(Boolean);
 
-    const newSong: Omit<Song, "id"> = {
+    const payload = {
       title: form.title.trim(),
       originalKey: form.originalKey.trim().toUpperCase(),
       tempo: form.tempo.trim(),
       tags: parsedTags,
-      addedAt: "Just now",
       notes: form.notes.trim(),
       lyrics: form.lyrics.trim(),
     };
 
-    const { data, error } = await supabase.from("songs").insert(newSong).select();
+    if (editingSong) {
+      // UPDATE
+      const { error } = await supabase
+        .from("songs")
+        .update(payload)
+        .eq("id", editingSong.id);
 
-    if (error) {
-      console.error("Error adding song:", error);
-      toast({
-        title: "Failed to add song",
-        description: error.message,
-      });
+      if (error) {
+        toast({ title: "Update failed", description: error.message });
+        return;
+      }
+
+      setSongs((cur) =>
+        cur.map((s) => (s.id === editingSong.id ? { ...s, ...payload, addedAt: s.addedAt } : s)),
+      );
+      toast({ title: "Song updated", description: `${payload.title} updated.` });
     } else {
-      setSongs((current) => [...(data as Song[]), ...current]);
-      toast({
-        title: "Song added",
-        description: `${newSong.title} was added to your library.`,
-      });
+      // INSERT
+      const { data, error } = await supabase.from("songs").insert(payload).select();
+
+      if (error) {
+        toast({ title: "Add failed", description: error.message });
+        return;
+      }
+
+      setSongs((cur) => [...(data as Song[]), ...cur]);
+      toast({ title: "Song added", description: `${payload.title} added.` });
     }
 
+    // Reset form
     setForm({
       title: "",
       originalKey: "",
@@ -165,10 +170,11 @@ export default function Songs() {
       lyrics: "",
     });
     setIsAddingSong(false);
+    setEditingSong(null);
   };
 
   // -----------------------------------------------------------------
-  // Delete song (writes to Supabase)
+  // Delete song
   // -----------------------------------------------------------------
   const handleDeleteSong = async (songId: string) => {
     const confirmed = window.confirm(
@@ -177,24 +183,33 @@ export default function Songs() {
     if (!confirmed) return;
 
     const { error } = await supabase.from("songs").delete().eq("id", songId);
-
     if (error) {
-      console.error("Error deleting song:", error);
-      toast({
-        title: "Failed to delete song",
-        description: error.message,
-      });
-    } else {
-      setSongs((current) => current.filter((s) => s.id !== songId));
-      toast({
-        title: "Song deleted",
-        description: "The song has been removed from your library.",
-      });
+      toast({ title: "Delete failed", description: error.message });
+      return;
     }
+
+    setSongs((cur) => cur.filter((s) => s.id !== songId));
+    toast({ title: "Song deleted", description: "Song removed from library." });
   };
 
   // -----------------------------------------------------------------
-  // Preview – open dialog with lyrics/chords
+  // Edit flow
+  // -----------------------------------------------------------------
+  const handleEditSong = (song: Song) => {
+    setEditingSong(song);
+    setForm({
+      title: song.title,
+      originalKey: song.originalKey,
+      tempo: song.tempo ?? "",
+      tags: song.tags.join(", "),
+      notes: song.notes ?? "",
+      lyrics: (song as any).lyrics ?? "",
+    });
+    setIsAddingSong(true);
+  };
+
+  // -----------------------------------------------------------------
+  // Preview dialog
   // -----------------------------------------------------------------
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -203,7 +218,6 @@ export default function Songs() {
     setPreviewSong(song);
     setIsPreviewOpen(true);
   };
-
   const closePreview = () => {
     setIsPreviewOpen(false);
     setPreviewSong(null);
@@ -221,27 +235,29 @@ export default function Songs() {
               Song Library
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add, search, filter, and preview worship songs.
+              Add, search, filter, preview and edit songs.
             </p>
           </div>
 
-          <Button onClick={() => setIsAddingSong((current) => !current)}>
+          <Button onClick={() => setIsAddingSong((c) => !c)}>
             <Plus className="mr-2 h-4 w-4" />
             {isAddingSong ? "Hide Form" : "Upload New Song"}
           </Button>
         </header>
 
+        {/* Add / Edit Form */}
         {isAddingSong && (
           <Card>
             <CardHeader>
-              <CardTitle>Add New Song</CardTitle>
+              <CardTitle>{editingSong ? "Edit Song" : "Add New Song"}</CardTitle>
               <CardDescription>
-                Enter the song details that will be used in setlists and key
-                recommendations.
+                {editingSong
+                  ? "Update the song details."
+                  : "Enter details for a new song."}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAddSong} className="space-y-4">
+              <form onSubmit={handleAddOrUpdate} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label htmlFor="song-title">Song Title *</Label>
@@ -285,7 +301,7 @@ export default function Songs() {
                       name="tags"
                       value={form.tags}
                       onChange={handleInputChange}
-                      placeholder="e.g., Praise, Worship, Upbeat"
+                      placeholder="e.g., Praise, Worship"
                     />
                   </div>
                 </div>
@@ -302,7 +318,6 @@ export default function Songs() {
                   />
                 </div>
 
-                {/* New lyrics textarea */}
                 <div>
                   <Label htmlFor="song-lyrics">Lyrics & Chords</Label>
                   <Textarea
@@ -319,22 +334,36 @@ export default function Songs() {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setIsAddingSong(false)}
+                    onClick={() => {
+                      setIsAddingSong(false);
+                      setEditingSong(null);
+                      setForm({
+                        title: "",
+                        originalKey: "",
+                        tempo: "",
+                        tags: "",
+                        notes: "",
+                        lyrics: "",
+                      });
+                    }}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Add Song</Button>
+                  <Button type="submit">
+                    {editingSong ? "Update Song" : "Add Song"}
+                  </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
         )}
 
+        {/* Song list */}
         <Card>
           <CardHeader>
             <CardTitle>Browse Songs</CardTitle>
             <CardDescription>
-              Search by title or filter by original key.
+              Search, filter, preview and edit songs.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -343,7 +372,7 @@ export default function Songs() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search songs..."
                   className="pl-9"
                 />
@@ -384,6 +413,7 @@ export default function Songs() {
                     song={song}
                     onPreview={handlePreview}
                     onDelete={handleDeleteSong}
+                    onEdit={handleEditSong}
                   />
                 ))}
               </div>
