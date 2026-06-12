@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global button transition */
+button,
+[role="button"] {
+  @apply transition-colors duration-300 ease-in-out;
+}
+
+/* Existing base styles */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -77,6 +84,7 @@
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
+    @apply bg-gray-900;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
     --sidebar-background: 240 5.9% 10%;

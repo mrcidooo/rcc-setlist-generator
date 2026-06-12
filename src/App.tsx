@@ -22,7 +22,8 @@ export default function App() {
         <Sonner />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <BrowserRouter>
-            <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 relative">
+            {/* smoother transition for theme changes */}
+            <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-500 ease-in-out relative">
               <main className="flex-1 pb-28">
                 <Routes>
                   <Route path="/" element={<Index />} />
