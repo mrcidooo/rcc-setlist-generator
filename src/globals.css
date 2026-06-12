@@ -47,6 +47,16 @@ body,
   }
 }
 
+/* Custom background and foreground utilities matching the design tokens */
+@layer utilities {
+  .bg-background {
+    @apply bg-[var(--background)];
+  }
+  .text-foreground {
+    @apply text-[var(--foreground)];
+  }
+}
+
 /* Existing base styles */
 @layer base {
   :root {
