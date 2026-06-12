@@ -260,6 +260,7 @@ export default function Index() {
             return (
               <Button
                 key={index}
+                type="button"
                 className={`${action.color} h-20 flex-col gap-2 text-white`}
                 onClick={() => handleQuickAction(action.action)}
               >
