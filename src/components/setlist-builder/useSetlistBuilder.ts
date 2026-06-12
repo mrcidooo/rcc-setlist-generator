@@ -31,14 +31,12 @@ export function useSetlistBuilder() {
         .single();
 
       if (error && error.code !== "PGRST116") {
-        // PGRST116 = “No rows found” – ignore, we just start fresh
         console.error("Failed to load setlist:", error);
         toast({ title: "Unable to load setlist", description: error.message });
         return;
       }
 
       if (data) {
-        // Supabase returns JSON columns as plain objects, so we can cast directly
         setSetlist(data as Setlist);
       }
     };
@@ -47,9 +45,51 @@ export function useSetlistBuilder() {
   }, [toast]);
 
   // -----------------------------------------------------------------
+  // Load the interactive key‑matrix for the current user (or anonymous)
+  // -----------------------------------------------------------------
+  const [keyMatrix, setKeyMatrix] = useState<Record<string, Record<string, string>>>({});
+
+  useEffect(() => {
+    const loadMatrix = async () => {
+      // Try to get the authenticated user first
+      const { data: authUser } = await supabase.auth.getUser();
+      let userId = authUser?.user?.id;
+
+      // If no logged‑in user, generate / reuse an anonymous UUID
+      if (!userId) {
+        const storageKey = "vocal_key_user";
+        let anonId = localStorage.getItem(storageKey);
+        if (!anonId) {
+          anonId = crypto.randomUUID();
+          localStorage.setItem(storageKey, anonId);
+        }
+        userId = anonId;
+      }
+
+      const { data: matrixData, error } = await supabase
+        .from("key_matrix")
+        .select("matrix")
+        .eq("user_id", userId)
+        .single();
+
+      if (!error && matrixData?.matrix) {
+        setKeyMatrix(matrixData.matrix as Record<string, Record<string, string>>);
+      } else {
+        // Fallback to an empty matrix if none exists
+        setKeyMatrix({});
+      }
+    };
+
+    loadMatrix();
+  }, []);
+
+  // -----------------------------------------------------------------
   // Helpers (unchanged logic, just moved into this file)
   // -----------------------------------------------------------------
-  const recommendedKey = getRecommendedKey(formData.songId, formData.singerId);
+  // Compute the recommended key from the loaded matrix; fall back to the static helper
+  const recommendedKey =
+    keyMatrix[formData.songId]?.[formData.singerId] ??
+    getRecommendedKey(formData.songId, formData.singerId);
 
   const handleSetlistChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -65,7 +105,7 @@ export function useSetlistBuilder() {
 
   const handleSongChange = (value: string) => {
     const song = availableSongs.find((item) => item.id === value);
-    const recommendedSongKey = getRecommendedKey(value, formData.singerId);
+    const recommendedSongKey = keyMatrix[value]?.[formData.singerId] ?? getRecommendedKey(value, formData.singerId);
 
     setFormData((current) => ({
       ...current,
@@ -75,7 +115,7 @@ export function useSetlistBuilder() {
   };
 
   const handleSingerChange = (value: string) => {
-    const recommendedSingerKey = getRecommendedKey(formData.songId, value);
+    const recommendedSingerKey = keyMatrix[formData.songId]?.[value] ?? getRecommendedKey(formData.songId, value);
 
     setFormData((current) => ({
       ...current,
@@ -101,7 +141,7 @@ export function useSetlistBuilder() {
 
     if (!song || !singer) return;
 
-    const recommendedSongKey = getRecommendedKey(song.id, singer.id);
+    const recommendedSongKey = keyMatrix[song.id]?.[singer.id] ?? getRecommendedKey(song.id, singer.id);
 
     const newSongEntry = {
       id: Date.now().toString(),
@@ -184,10 +224,8 @@ export function useSetlistBuilder() {
       return;
     }
 
-    // Upsert – if an `id` already exists Supabase updates, otherwise it inserts
     const payload = {
       ...setlist,
-      // Supabase expects a JSON column for the song list; we store it as is
       songs: setlist.songs,
     };
 
