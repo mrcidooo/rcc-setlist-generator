@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const dashboardStats = [
   { title: "Total Songs", value: "42", icon: Music, color: "text-blue-600" },
@@ -47,15 +48,16 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 flex flex-col">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm p-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Worship Setlist Generator</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">Church Worship Team</p>
       </header>
 
-      {/* Dashboard Stats */}
-      <div className="p-4">
+      {/* Main Content */}
+      <div className="p-4 flex-1">
+        {/* Dashboard Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           {dashboardStats.map((stat, index) => (
             <Card key={index} className="border-0 shadow-md">
@@ -161,6 +163,11 @@ export default function Index() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Footer */}
+      <footer className="mt-auto">
+        <MadeWithDyad />
+      </footer>
     </div>
   );
 }
