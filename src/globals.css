@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import the dark‑mode transition styles */
+@import "./styles/darkTransition.css";
+
 /* Global transitions and premium effects */
 button,
 [role="button"],
