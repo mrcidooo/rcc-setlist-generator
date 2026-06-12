@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 type SongPreviewDialogProps = {
   song: {
@@ -21,24 +21,17 @@ type SongPreviewDialogProps = {
   onClose: () => void;
 };
 
-/**
- * Simple formatter:
- * - Keeps line breaks.
- * - Highlights chords wrapped in square brackets: [C], [G], etc.
- */
 const formatLyrics = (raw: string) => {
   const lines = raw.split("\n");
   return lines.map((line, idx) => {
-    // Replace each [chord] with a styled span
-    const parts = line.split(/(\[[^\]]+\])/g); // keep the brackets in the array
+    const parts = line.split(/(\[[^\]]+\])/g);
     return (
-      <p key={idx} className="whitespace-pre-wrap">
+      <p key={idx} className="whitespace-pre-wrap leading-relaxed min-h-[1.5rem]">
         {parts.map((part, i) => {
           if (/^\[[^\]]+\]$/.test(part)) {
-            // chord
             return (
-              <span key={i} className="text-primary font-semibold">
-                {part}
+              <span key={i} className="text-indigo-500 dark:text-indigo-400 font-extrabold text-[12px] bg-indigo-500/10 px-1.5 py-0.5 rounded-[6px] mx-0.5 inline-block">
+                {part.replace(/[\[\]]/g, "")}
               </span>
             );
           }
@@ -58,12 +51,14 @@ export default function SongPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader className="flex items-start justify-between">
-          <div>
-            <DialogTitle>{song.title}</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Original Key: {song.originalKey}
+      <DialogContent className="max-w-2xl rounded-[32px] border-0 bg-white/95 dark:bg-card/95 shadow-2xl p-6 backdrop-blur-3xl">
+        <DialogHeader className="flex flex-row items-start justify-between pb-4 border-b border-black/5 dark:border-white/5">
+          <div className="space-y-1">
+            <DialogTitle className="text-lg font-black tracking-tight text-foreground">
+              {song.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" /> Original Key: {song.originalKey}
             </DialogDescription>
           </div>
           <Button
@@ -71,15 +66,16 @@ export default function SongPreviewDialog({
             size="icon"
             onClick={onClose}
             aria-label="Close preview"
+            className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
 
-        <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-md bg-muted/50 p-4 font-mono text-sm text-foreground">
+        <div className="mt-4 max-h-[50vh] overflow-y-auto rounded-[24px] bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-5 font-mono text-sm text-foreground space-y-1.5 shadow-inner">
           {song.lyrics?.trim()
             ? formatLyrics(song.lyrics)
-            : "No lyrics/chords available for this song."}
+            : <p className="text-xs text-muted-foreground italic text-center py-6">No performance lyrics or chord markings mapped for this song.</p>}
         </div>
       </DialogContent>
     </Dialog>

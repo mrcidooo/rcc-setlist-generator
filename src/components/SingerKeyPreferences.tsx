@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Trash2, Users } from "lucide-react";
+import { Music, Trash2, Users, Sliders, KeyRound } from "lucide-react";
 
 type Singer = {
   id: string;
@@ -124,39 +124,51 @@ export default function SingerKeyPreferences() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-6 max-w-4xl mx-auto pb-32">
+      <div className="px-1 mb-2">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <KeyRound className="h-6 w-6 text-indigo-500 animate-pulse" />
+          Vocal Key Matrix
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Define and track key preferences for worship team singers to ensure stress-free vocals.
+        </p>
+      </div>
+
       <section id="singers" className="scroll-mt-24">
-        <Card>
-          <CardHeader>
+        <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  Singers
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <Users className="h-5 w-5 text-indigo-500" />
+                  Singers Configuration
                 </CardTitle>
                 <CardDescription>
-                  Each singer becomes a column in the key matrix below.
+                  Team vocalists mapped to dynamic service components.
                 </CardDescription>
               </div>
-              <Badge variant="secondary">{singers.length} singers</Badge>
+              <Badge variant="secondary" className="rounded-[12px] bg-indigo-500/10 text-indigo-500 px-3 py-1 font-bold">
+                {singers.length} Active
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
             {singers.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No singers available yet.
+              <div className="rounded-[20px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No active singers registered.
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {singers.map((singer) => (
                   <div
                     key={singer.id}
-                    className="flex items-center justify-between rounded-lg border bg-card p-3"
+                    className="flex items-center justify-between rounded-[20px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4"
                   >
                     <div>
-                      <p className="font-medium text-foreground">{singer.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {Object.keys(singerKeyData).length} songs tracked
+                      <p className="font-bold text-foreground text-sm">{singer.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Comfortable key mapped
                       </p>
                     </div>
                     <Button
@@ -164,8 +176,9 @@ export default function SingerKeyPreferences() {
                       size="icon"
                       aria-label={`Delete ${singer.name}`}
                       onClick={() => handleDeleteSinger(singer)}
+                      className="h-9 w-9 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -176,37 +189,39 @@ export default function SingerKeyPreferences() {
       </section>
 
       <section id="songs" className="scroll-mt-24">
-        <Card>
-          <CardHeader>
+        <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Music className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  Songs
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <Music className="h-5 w-5 text-purple-500" />
+                  Active Songs Index
                 </CardTitle>
                 <CardDescription>
-                  Each song becomes a row in the key matrix below.
+                  Registered tracklist representing worship libraries.
                 </CardDescription>
               </div>
-              <Badge variant="secondary">{songs.length} songs</Badge>
+              <Badge variant="secondary" className="rounded-[12px] bg-purple-500/10 text-purple-500 px-3 py-1 font-bold">
+                {songs.length} Tracks
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
             {songs.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No songs available yet.
+              <div className="rounded-[20px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No songs registered.
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {songs.map((song) => (
                   <div
                     key={song.id}
-                    className="flex items-center justify-between rounded-lg border bg-card p-3"
+                    className="flex items-center justify-between rounded-[20px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4"
                   >
                     <div>
-                      <p className="font-medium text-foreground">{song.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {singers.length} singer keys available
+                      <p className="font-bold text-foreground text-sm">{song.title}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Singer matrix enabled
                       </p>
                     </div>
                     <Button
@@ -214,8 +229,9 @@ export default function SingerKeyPreferences() {
                       size="icon"
                       aria-label={`Delete ${song.title}`}
                       onClick={() => handleDeleteSong(song)}
+                      className="h-9 w-9 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -226,46 +242,49 @@ export default function SingerKeyPreferences() {
       </section>
 
       <section id="comfortable-keys" className="scroll-mt-24">
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Comfortable Key Matrix</CardTitle>
-              <CardDescription>
-                View and edit each singer&apos;s comfortable key for every song.
-              </CardDescription>
+        <Card className="neu-card border-0 bg-white/75 dark:bg-card/75 overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-5 w-5 text-indigo-500" />
+              <div>
+                <CardTitle className="text-lg font-bold">Interactive Key Matrix</CardTitle>
+                <CardDescription>
+                  Manage comfort zones directly by changing values inline.
+                </CardDescription>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {singers.length === 0 || songs.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                Add singers and songs to build the key matrix.
+              <div className="rounded-[20px] border border-dashed border-border p-8 text-center text-sm text-muted-foreground m-4">
+                Configure both singers and songs to unlock the matrix database.
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="min-w-full divide-y divide-border">
-                  <thead className="bg-muted/60">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-black/5 dark:divide-white/5">
+                  <thead className="bg-black/[0.02] dark:bg-white/[0.02]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Song
                       </th>
                       {singers.map((singer) => (
                         <th
                           key={singer.id}
-                          className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                          className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground"
                         >
                           {singer.name}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border bg-background">
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 bg-transparent">
                     {songs.map((song) => (
-                      <tr key={song.id} className="hover:bg-muted/40">
-                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-foreground">
+                      <tr key={song.id} className="hover:bg-indigo-500/5 transition-colors">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-foreground">
                           {song.title}
                         </td>
                         {singers.map((singer) => (
-                          <td key={`${song.id}-${singer.id}`} className="px-4 py-3">
+                          <td key={`${song.id}-${singer.id}`} className="px-6 py-4 text-center">
                             <Input
                               value={getKeyForSinger(song.id, singer.id)}
                               onChange={(event) => {
@@ -273,11 +292,11 @@ export default function SingerKeyPreferences() {
                                   ...current,
                                   [song.id]: {
                                     ...(current[song.id] ?? {}),
-                                    [singer.id]: event.target.value,
+                                    [singer.id]: event.target.value.toUpperCase(),
                                   },
                                 }));
                               }}
-                              className="h-9 w-16 text-center"
+                              className="h-10 w-16 text-center font-extrabold text-indigo-500 dark:text-indigo-400 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl focus:border-indigo-500 inline-block"
                               placeholder="-"
                             />
                           </td>

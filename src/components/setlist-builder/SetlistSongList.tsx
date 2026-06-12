@@ -31,20 +31,20 @@ export default function SetlistSongList({
   onMoveSong,
 }: SetlistSongListProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Song Order</CardTitle>
+    <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-bold">Worship Sequence Order</CardTitle>
         <CardDescription>
-          Reorder songs, adjust keys, and remove items from the setlist.
+          Organize track order, view matched keys, and manage items in the set.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         {songs.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-8 text-center">
-            <ListMusic className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">No songs added yet</p>
-            <p className="text-sm text-muted-foreground">
-              Use the form above to add songs to this setlist.
+          <div className="rounded-[24px] border border-dashed border-black/10 dark:border-white/10 p-12 text-center bg-black/[0.01]">
+            <ListMusic className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60 animate-bounce" />
+            <p className="font-bold text-foreground">No Tracks Added Yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+              Choose 'Add Song to Setlist' above to construct your worship experience.
             </p>
           </div>
         ) : (
@@ -52,45 +52,49 @@ export default function SetlistSongList({
             {songs.map((songItem) => (
               <div
                 key={songItem.id}
-                className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                  {/* Glowing step circle */}
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[18px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 font-extrabold text-sm border border-indigo-500/15 shadow-inner">
                     {songItem.order}
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-foreground">
+                      <h3 className="font-bold text-foreground text-sm tracking-tight">
                         {songItem.songTitle}
                       </h3>
-                      <Badge variant="secondary">{songItem.originalKey}</Badge>
+                      <Badge variant="secondary" className="rounded-[8px] bg-black/10 dark:bg-white/10 text-foreground font-semibold text-[10px]">
+                        Orig: {songItem.originalKey}
+                      </Badge>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 font-medium">
+                        <Users className="h-3.5 w-3.5 text-indigo-400" />
                         {songItem.singerName}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 font-bold text-indigo-500 dark:text-indigo-400">
                         <Music className="h-3.5 w-3.5" />
-                        Key: {songItem.selectedKey}
+                        Selected Key: {songItem.selectedKey}
                       </span>
                     </div>
                     {songItem.notes && (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {songItem.notes}
+                      <p className="mt-2 text-xs text-muted-foreground/80 italic bg-black/5 dark:bg-white/5 p-2 rounded-xl border border-black/5">
+                        Note: {songItem.notes}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl w-fit">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onMoveSong(songItem.id, "up")}
                     disabled={songItem.order === 1}
+                    className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                   >
-                    <ArrowUp className="mr-1 h-4 w-4" />
+                    <ArrowUp className="mr-0.5 h-3.5 w-3.5" />
                     Up
                   </Button>
                   <Button
@@ -98,17 +102,18 @@ export default function SetlistSongList({
                     size="sm"
                     onClick={() => onMoveSong(songItem.id, "down")}
                     disabled={songItem.order === songs.length}
+                    className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                   >
-                    <ArrowDown className="mr-1 h-4 w-4" />
+                    <ArrowDown className="mr-0.5 h-3.5 w-3.5" />
                     Down
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:text-destructive"
+                    className="h-8 rounded-[10px] text-[11px] font-bold text-red-500 hover:text-red-600 hover:bg-red-500/10"
                     onClick={() => onRemoveSong(songItem.id)}
                   >
-                    <Trash2 className="mr-1 h-4 w-4" />
+                    <Trash2 className="mr-0.5 h-3.5 w-3.5" />
                     Remove
                   </Button>
                 </div>

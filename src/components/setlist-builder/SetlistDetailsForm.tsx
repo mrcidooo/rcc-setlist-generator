@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Sliders, CalendarDays } from "lucide-react";
 import { type ChangeEvent } from "react";
 import { serviceTypes } from "./constants";
 import type { ServiceType, Setlist } from "./types";
@@ -38,49 +38,62 @@ export default function SetlistDetailsForm({
   onToggleAddingSong,
 }: SetlistDetailsFormProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Setlist Details</CardTitle>
-        <CardDescription>
-          Add the service information before building your song order.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
+    <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-indigo-500" />
           <div>
-            <Label htmlFor="setlist-name">Setlist Name *</Label>
+            <CardTitle className="text-lg font-bold">Worship Planning</CardTitle>
+            <CardDescription>
+              Establish service variables before assigning comfortable keys.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="setlist-name" className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+              Setlist Label *
+            </Label>
             <Input
               id="setlist-name"
               name="name"
               value={setlist.name}
               onChange={onSetlistChange}
               placeholder="e.g., Sunday Worship"
+              className="h-11 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-[18px] focus:border-indigo-500"
             />
           </div>
 
-          <div>
-            <Label htmlFor="setlist-date">Date *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="setlist-date" className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+              Service Date *
+            </Label>
             <Input
               id="setlist-date"
               name="date"
               type="date"
               value={setlist.date}
               onChange={onSetlistChange}
+              className="h-11 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-[18px] focus:border-indigo-500"
             />
           </div>
 
-          <div>
-            <Label htmlFor="service-type">Service Type *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="service-type" className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+              Service Context *
+            </Label>
             <Select
               value={setlist.serviceType}
               onValueChange={onServiceTypeChange}
             >
-              <SelectTrigger id="service-type">
+              <SelectTrigger id="service-type" className="h-11 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-[18px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-[18px]">
                 {serviceTypes.map((serviceType) => (
-                  <SelectItem key={serviceType} value={serviceType}>
+                  <SelectItem key={serviceType} value={serviceType} className="rounded-xl">
                     {serviceType}
                   </SelectItem>
                 ))}
@@ -91,10 +104,10 @@ export default function SetlistDetailsForm({
 
         <Button
           variant="outline"
-          className="w-full"
           onClick={onToggleAddingSong}
+          className="w-full h-11 rounded-[18px] border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-500 font-semibold"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4 text-indigo-500" />
           {isAddingSong ? "Hide Song Form" : "Add Song to Setlist"}
         </Button>
       </CardContent>

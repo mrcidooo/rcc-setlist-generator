@@ -19,9 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Plus, Search, Trash2, Users } from "lucide-react";
+import { Edit, Plus, Search, Trash2, Users, Sparkles, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type VoiceType = "male" | "female";
@@ -30,16 +29,15 @@ type Singer = {
   id: string;
   name: string;
   nickname: string;
-  voiceType: VoiceType; // UI‑only camelCase
+  voiceType: VoiceType;
   notes: string;
 };
 
 const voiceTypes: { value: VoiceType; label: string }[] = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
+  { value: "male", label: "Male vocal profile" },
+  { value: "female", label: "Female vocal profile" },
 ];
 
-// Convert DB record (snake_case) → UI record (camelCase)
 const mapSinger = (record: any): Singer => ({
   id: record.id,
   name: record.name,
@@ -62,7 +60,6 @@ export default function Singers() {
 
   const { toast } = useToast();
 
-  // Load singers – explicit column list matches DB schema
   useEffect(() => {
     const fetchSingers = async () => {
       const { data, error } = await supabase
@@ -97,7 +94,7 @@ export default function Singers() {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((c) => ({ ...c, [name]: value }));
@@ -123,7 +120,6 @@ export default function Singers() {
     };
 
     if (editingId) {
-      // Update existing singer
       const { error } = await supabase
         .from("singers")
         .update(payload)
@@ -140,7 +136,6 @@ export default function Singers() {
 
       toast({ title: "Singer updated", description: `${formData.name} updated.` });
     } else {
-      // Insert new singer
       const { data, error } = await supabase
         .from("singers")
         .insert(payload)
@@ -189,212 +184,243 @@ export default function Singers() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-28">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Singers
+    <div className="min-h-screen bg-transparent p-4 pb-32 max-w-4xl mx-auto space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
+              <Users className="h-5 w-5" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-1.5">
+              Singers Directory
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage worship team members and their vocal profiles.
-            </p>
           </div>
-
-          <Button onClick={openNewSingerForm}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Singer
-          </Button>
-        </header>
-
-        {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="p-5">
-              <p className="text-sm text-muted-foreground">Total Singers</p>
-              <p className="text-3xl font-bold">{singers.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-5">
-              <p className="text-sm text-muted-foreground">Male Voices</p>
-              <p className="text-3xl font-bold">
-                {singers.filter((s) => s.voiceType === "male").length}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-5">
-              <p className="text-sm text-muted-foreground">Female Voices</p>
-              <p className="text-3xl font-bold">
-                {singers.filter((s) => s.voiceType === "female").length}
-              </p>
-            </CardContent>
-          </Card>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage worship team vocalists and their comfortable performance ranges.
+          </p>
         </div>
 
-        {/* Form */}
-        {isFormOpen && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingId ? "Edit Singer" : "Add New Singer"}</CardTitle>
-              <CardDescription>
-                Add the singer profile used for setlist recommendations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="singer-name">Full Name *</Label>
-                    <Input
-                      id="singer-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter full name"
-                      required
-                    />
-                  </div>
+        <Button 
+          onClick={openNewSingerForm}
+          className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add New Singer
+        </Button>
+      </header>
 
-                  <div>
-                    <Label htmlFor="singer-nickname">Nickname</Label>
-                    <Input
-                      id="singer-nickname"
-                      name="nickname"
-                      value={formData.nickname}
-                      onChange={handleInputChange}
-                      placeholder="Enter nickname"
-                    />
-                  </div>
+      {/* Dynamic Summary Cards */}
+      <div className="grid gap-4 grid-cols-3">
+        <Card className="neu-card border-0 bg-white/70 dark:bg-card/75 p-4 text-center">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total</p>
+          <p className="text-2xl font-black text-foreground mt-1">{singers.length}</p>
+        </Card>
+        <Card className="neu-card border-0 bg-white/70 dark:bg-card/75 p-4 text-center">
+          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Male</p>
+          <p className="text-2xl font-black text-indigo-500 mt-1">
+            {singers.filter((s) => s.voiceType === "male").length}
+          </p>
+        </Card>
+        <Card className="neu-card border-0 bg-white/70 dark:bg-card/75 p-4 text-center">
+          <p className="text-[10px] font-bold text-pink-500 uppercase tracking-widest">Female</p>
+          <p className="text-2xl font-black text-pink-500 mt-1">
+            {singers.filter((s) => s.voiceType === "female").length}
+          </p>
+        </Card>
+      </div>
 
-                  <div>
-                    <Label htmlFor="singer-voice-type">Voice Type *</Label>
-                    <Select
-                      value={formData.voiceType}
-                      onValueChange={handleVoiceTypeChange}
-                    >
-                      <SelectTrigger id="singer-voice-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {voiceTypes.map((vt) => (
-                          <SelectItem key={vt.value} value={vt.value}>
-                            {vt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="singer-notes">Vocal Notes</Label>
-                    <Input
-                      id="singer-notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Tenor, Alto, Lead"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      resetForm();
-                      setIsFormOpen(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingId ? "Update Singer" : "Add Singer"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* List */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* Modern sliding popup or inline editor card */}
+      {isFormOpen && (
+        <Card className="neu-card border-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:bg-card/75">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-indigo-500" />
               <div>
-                <CardTitle>Team Members</CardTitle>
-                <CardDescription>Search and manage your worship singers.</CardDescription>
-              </div>
-
-              <div className="w-full sm:w-72">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search singers..."
-                    className="pl-9"
-                  />
-                </div>
+                <CardTitle className="text-lg font-bold">{editingId ? "Edit Profile" : "Register Singer Profile"}</CardTitle>
+                <CardDescription>
+                  Configure vocal parameters used for automatic matches.
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {filteredSingers.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-8 text-center">
-                <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="font-medium">No singers found</p>
-                <p className="text-sm text-muted-foreground">
-                  Try a different search term or add a new singer.
-                </p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="singer-name" className="text-xs font-bold text-muted-foreground uppercase">Full Name *</Label>
+                  <Input
+                    id="singer-name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter full name"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="singer-nickname" className="text-xs font-bold text-muted-foreground uppercase">Nickname</Label>
+                  <Input
+                    id="singer-nickname"
+                    name="nickname"
+                    value={formData.nickname}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Johnny"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="singer-voice-type" className="text-xs font-bold text-muted-foreground uppercase">Voice Range *</Label>
+                  <Select
+                    value={formData.voiceType}
+                    onValueChange={handleVoiceTypeChange}
+                  >
+                    <SelectTrigger id="singer-voice-type" className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-[18px]">
+                      {voiceTypes.map((vt) => (
+                        <SelectItem key={vt.value} value={vt.value} className="rounded-xl">
+                          {vt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="singer-notes" className="text-xs font-bold text-muted-foreground uppercase">Vocal Description</Label>
+                  <Input
+                    id="singer-notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Soprano, High Tenor..."
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  />
+                </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredSingers.map((singer) => (
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    resetForm();
+                    setIsFormOpen(false);
+                  }}
+                  className="rounded-xl font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5"
+                >
+                  {editingId ? "Update Singer" : "Save Profile"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main interactive directory table */}
+      <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <CardTitle className="text-lg font-bold">Worship Team Directory</CardTitle>
+              <CardDescription>Search and update your group's profiles.</CardDescription>
+            </div>
+
+            <div className="w-full sm:w-72">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Filter singer lists..."
+                  className="pl-10 h-10 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10"
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredSingers.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-black/10 dark:border-white/10 p-12 text-center bg-black/[0.01]">
+              <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60 animate-pulse" />
+              <p className="font-bold">No active singers matches</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Try querying another name or add a new profile above.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredSingers.map((singer) => {
+                const initials = singer.name.split(" ").map(n => n[0]).join("").toUpperCase();
+                const isFemale = singer.voiceType === "female";
+
+                return (
                   <div
                     key={singer.id}
-                    className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300">
-                        <Users className="h-5 w-5" />
+                      <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[16px] text-xs font-bold ${
+                        isFemale 
+                          ? "bg-pink-500/10 text-pink-600 dark:text-pink-300 border border-pink-500/10" 
+                          : "bg-blue-500/10 text-indigo-600 dark:text-indigo-300 border border-indigo-500/10"
+                      }`}>
+                        {initials}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">{singer.name}</h3>
-                        <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                          <Badge variant="secondary">
-                            {singer.voiceType === "male" ? "Male" : "Female"}
+                        <h3 className="font-bold text-foreground text-sm tracking-tight">{singer.name}</h3>
+                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <Badge 
+                            variant="secondary"
+                            className={`rounded-lg font-bold text-[9px] border-0 ${
+                              isFemale ? "bg-pink-500/10 text-pink-600" : "bg-blue-500/10 text-blue-600"
+                            }`}
+                          >
+                            {singer.voiceType === "female" ? "FEMALE" : "MALE"}
                           </Badge>
                           {singer.nickname && <span>“{singer.nickname}”</span>}
-                          {singer.notes && <span>{singer.notes}</span>}
+                          {singer.notes && <span className="font-medium">• {singer.notes}</span>}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(singer)}>
-                        <Edit className="mr-2 h-4 w-4" />
+                    <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl w-fit">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEdit(singer)}
+                        className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
+                      >
+                        <Edit className="mr-1.5 h-3.5 w-3.5" />
                         Edit
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
+                        className="h-8 rounded-[10px] text-[11px] font-bold text-red-500 hover:text-red-600 hover:bg-red-500/10"
                         onClick={() => handleDelete(singer)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                         Delete
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

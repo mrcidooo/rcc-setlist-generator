@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Trash2 } from "lucide-react";
+import { Music, Plus, Search, Sparkles } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
@@ -43,9 +43,6 @@ export default function Songs() {
 
   const { toast } = useToast();
 
-  // -----------------------------------------------------------------
-  // Load songs (real‑time)
-  // -----------------------------------------------------------------
   useEffect(() => {
     const fetchSongs = async () => {
       const { data, error } = await supabase.from("songs").select("*");
@@ -55,7 +52,6 @@ export default function Songs() {
       }
 
       const supabaseSongs = (data as Song[]) ?? [];
-
       const stored = localStorage.getItem("uploadedSongs");
       const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
 
@@ -73,15 +69,11 @@ export default function Songs() {
       )
       .subscribe();
 
-    // Cleanup without returning a promise
     return () => {
       supabase.removeChannel(subscription);
     };
   }, []);
 
-  // -----------------------------------------------------------------
-  // Helpers
-  // -----------------------------------------------------------------
   const availableKeys = useMemo(() => {
     const keys = Array.from(new Set(songs.map((s) => s.originalKey))).sort();
     return ["all", ...keys];
@@ -105,9 +97,6 @@ export default function Songs() {
     setForm((c) => ({ ...c, [name]: value }));
   };
 
-  // -----------------------------------------------------------------
-  // Add / Update song
-  // -----------------------------------------------------------------
   const handleAddOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -134,7 +123,6 @@ export default function Songs() {
     };
 
     if (editingSong) {
-      // UPDATE
       const { error } = await supabase
         .from("songs")
         .update(payload)
@@ -152,7 +140,6 @@ export default function Songs() {
       );
       toast({ title: "Song updated", description: `${payload.title} updated.` });
     } else {
-      // INSERT
       const { data, error } = await supabase.from("songs").insert(payload).select();
 
       if (error) {
@@ -164,7 +151,6 @@ export default function Songs() {
       toast({ title: "Song added", description: `${payload.title} added.` });
     }
 
-    // Reset form
     setForm({
       title: "",
       originalKey: "",
@@ -177,9 +163,6 @@ export default function Songs() {
     setEditingSong(null);
   };
 
-  // -----------------------------------------------------------------
-  // Delete song
-  // -----------------------------------------------------------------
   const handleDeleteSong = async (songId: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this song? This action cannot be undone.",
@@ -196,13 +179,8 @@ export default function Songs() {
     toast({ title: "Song deleted", description: "Song removed from library." });
   };
 
-  // -----------------------------------------------------------------
-  // Edit flow – simplified tag handling
-  // -----------------------------------------------------------------
   const handleEditSong = (song: Song) => {
     setEditingSong(song);
-
-    // tags are already an array; join them for the input field
     const tagsArray = Array.isArray(song.tags) ? song.tags : [];
 
     setForm({
@@ -216,9 +194,6 @@ export default function Songs() {
     setIsAddingSong(true);
   };
 
-  // -----------------------------------------------------------------
-  // Preview dialog
-  // -----------------------------------------------------------------
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -231,209 +206,231 @@ export default function Songs() {
     setPreviewSong(null);
   };
 
-  // -----------------------------------------------------------------
-  // Render
-  // -----------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-background p-4 pb-28">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+    <div className="min-h-screen bg-transparent p-4 pb-32 max-w-5xl mx-auto space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
+              <Music className="h-5 w-5" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Song Library
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Add, search, filter, preview and edit songs.
-            </p>
           </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Search songs, edit chord profiles, and update performance indices.
+          </p>
+        </div>
 
-          <Button onClick={() => setIsAddingSong((c) => !c)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {isAddingSong ? "Hide Form" : "Upload New Song"}
-          </Button>
-        </header>
+        <Button 
+          onClick={() => setIsAddingSong((c) => !c)}
+          className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {isAddingSong ? "Hide Form" : "Upload New Song"}
+        </Button>
+      </header>
 
-        {/* Add / Edit Form */}
-        {isAddingSong && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingSong ? "Edit Song" : "Add New Song"}</CardTitle>
-              <CardDescription>
-                {editingSong ? "Update the song details." : "Enter details for a new song."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddOrUpdate} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="song-title">Song Title *</Label>
-                    <Input
-                      id="song-title"
-                      name="title"
-                      value={form.title}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Way Maker"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="song-key">Original Key *</Label>
-                    <Input
-                      id="song-key"
-                      name="originalKey"
-                      value={form.originalKey}
-                      onChange={handleInputChange}
-                      placeholder="e.g., C, D, G"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="song-tempo">Tempo</Label>
-                    <Input
-                      id="song-tempo"
-                      name="tempo"
-                      value={form.tempo}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 72 BPM"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="song-tags">Tags</Label>
-                    <Input
-                      id="song-tags"
-                      name="tags"
-                      value={form.tags}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Praise, Worship"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="song-notes">Notes</Label>
-                  <Textarea
-                    id="song-notes"
-                    name="notes"
-                    value={form.notes}
-                    onChange={handleInputChange}
-                    placeholder="Any notes about this song"
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="song-lyrics">Lyrics & Chords</Label>
-                  <Textarea
-                    id="song-lyrics"
-                    name="lyrics"
-                    value={form.lyrics}
-                    onChange={handleInputChange}
-                    placeholder="Paste lyrics with chord markings here…"
-                    rows={6}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsAddingSong(false);
-                      setEditingSong(null);
-                      setForm({
-                        title: "",
-                        originalKey: "",
-                        tempo: "",
-                        tags: "",
-                        notes: "",
-                        lyrics: "",
-                      });
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {editingSong ? "Update Song" : "Add Song"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Song list */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Browse Songs</CardTitle>
-            <CardDescription>
-              Search, filter, preview and edit songs.
-            </CardDescription>
+      {/* Upload/Edit Form */}
+      {isAddingSong && (
+        <Card className="neu-card border-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:bg-card/75">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
+              <div>
+                <CardTitle className="text-lg font-bold">{editingSong ? "Edit Song Record" : "Upload Song Record"}</CardTitle>
+                <CardDescription>
+                  Configure song attributes, original keys, and lyrics/chords.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search songs..."
-                  className="pl-9"
+          <CardContent>
+            <form onSubmit={handleAddOrUpdate} className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="song-title" className="text-xs font-bold text-muted-foreground uppercase">Song Title *</Label>
+                  <Input
+                    id="song-title"
+                    name="title"
+                    value={form.title}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Way Maker"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="song-key" className="text-xs font-bold text-muted-foreground uppercase">Original Key *</Label>
+                  <Input
+                    id="song-key"
+                    name="originalKey"
+                    value={form.originalKey}
+                    onChange={handleInputChange}
+                    placeholder="e.g., C, D, G"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="song-tempo" className="text-xs font-bold text-muted-foreground uppercase">Tempo</Label>
+                  <Input
+                    id="song-tempo"
+                    name="tempo"
+                    value={form.tempo}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 72 BPM"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="song-tags" className="text-xs font-bold text-muted-foreground uppercase">Tags</Label>
+                  <Input
+                    id="song-tags"
+                    name="tags"
+                    value={form.tags}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Praise, Worship"
+                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="song-notes" className="text-xs font-bold text-muted-foreground uppercase">Performance Notes</Label>
+                <Textarea
+                  id="song-notes"
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleInputChange}
+                  placeholder="Any structural notes about this song..."
+                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  rows={3}
                 />
               </div>
 
-              <Select value={selectedKey} onValueChange={setSelectedKey}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by key" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableKeys.map((key) => (
-                    <SelectItem key={key} value={key}>
-                      {key === "all" ? "All Keys" : key}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{songs.length} total songs</Badge>
-              <Badge variant="outline">{filteredSongs.length} shown</Badge>
-            </div>
-
-            {filteredSongs.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-8 text-center">
-                <Music className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="font-medium">No songs found</p>
-                <p className="text-sm text-muted-foreground">
-                  Try a different search term or key filter.
-                </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="song-lyrics" className="text-xs font-bold text-muted-foreground uppercase">Lyrics & Chord Matrix</Label>
+                <Textarea
+                  id="song-lyrics"
+                  name="lyrics"
+                  value={form.lyrics}
+                  onChange={handleInputChange}
+                  placeholder="Paste lyrics with chords wrapped like: [C] Amazing [G] grace..."
+                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs"
+                  rows={6}
+                />
               </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredSongs.map((song) => (
-                  <SongCard
-                    key={song.id}
-                    song={song}
-                    onPreview={handlePreview}
-                    onDelete={handleDeleteSong}
-                    onEdit={handleEditSong}
-                  />
-                ))}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsAddingSong(false);
+                    setEditingSong(null);
+                    setForm({
+                      title: "",
+                      originalKey: "",
+                      tempo: "",
+                      tags: "",
+                      notes: "",
+                      lyrics: "",
+                    });
+                  }}
+                  className="rounded-xl font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5"
+                >
+                  {editingSong ? "Update Record" : "Save Record"}
+                </Button>
               </div>
-            )}
+            </form>
           </CardContent>
         </Card>
+      )}
 
-        {/* Preview Dialog */}
-        <SongPreviewDialog
-          song={previewSong}
-          open={isPreviewOpen}
-          onClose={closePreview}
-        />
-      </div>
+      {/* Song List Frame */}
+      <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-bold">Browse Tracks</CardTitle>
+          <CardDescription>
+            Search, filter by comfortably assigned keys, and manage properties.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search active tracks..."
+                className="pl-10 h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10"
+              />
+            </div>
+
+            <Select value={selectedKey} onValueChange={setSelectedKey}>
+              <SelectTrigger className="h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 px-4 min-w-[140px]">
+                <SelectValue placeholder="Filter key" />
+              </SelectTrigger>
+              <SelectContent className="rounded-[18px]">
+                {availableKeys.map((key) => (
+                  <SelectItem key={key} value={key} className="rounded-xl">
+                    {key === "all" ? "All Keys" : `Key of ${key}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Badge variant="secondary" className="rounded-full bg-indigo-500/10 text-indigo-500 px-3 py-1 font-bold border-0 text-[10px]">
+              {songs.length} total tracks
+            </Badge>
+            <Badge variant="outline" className="rounded-full px-3 py-1 font-bold text-[10px] border-black/10 dark:border-white/10">
+              {filteredSongs.length} matching criteria
+            </Badge>
+          </div>
+
+          {filteredSongs.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-black/10 dark:border-white/10 p-12 text-center bg-black/[0.01]">
+              <Music className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60 animate-pulse" />
+              <p className="font-bold">No tracks matched query</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Try querying another title or upload a new chord matrix above.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {filteredSongs.map((song) => (
+                <SongCard
+                  key={song.id}
+                  song={song}
+                  onPreview={handlePreview}
+                  onDelete={handleDeleteSong}
+                  onEdit={handleEditSong}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Preview Dialog */}
+      <SongPreviewDialog
+        song={previewSong}
+        open={isPreviewOpen}
+        onClose={closePreview}
+      />
     </div>
   );
 }
