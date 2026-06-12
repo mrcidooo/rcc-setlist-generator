@@ -24,7 +24,7 @@ export const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <nav className="h-screen w-full border-t border-border bg-white p-4 dark:bg-gray-800 flex flex-col">
+    <nav className="h-screen w-full border-t border-border bg-gradient-to-b from-background/80 to-background/60 p-4 shadow-lg dark:from-background/90 dark:to-background/70 flex flex-col">
       <div className="flex flex-col space-y-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;

@@ -29,7 +29,7 @@ export const BottomNavigation = ({ className }: BottomNavigationProps) => {
   return (
     <nav
       className={cn(
-        "fixed inset-x-4 bottom-4 flex justify-around rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur dark:bg-gray-900/95",
+        "fixed inset-x-4 bottom-4 flex justify-around rounded-xl bg-gradient-to-r from-background/90 to-background/80 p-2 shadow-xl backdrop-blur dark:from-background/95 dark:to-background/90",
         className,
       )}
     >
