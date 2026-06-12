@@ -18,13 +18,15 @@ const App = () => (
       <Sonner />
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/singer-keys" element={<SingerKeyList />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <BottomNavigation />
+          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 relative">
+            <main className="flex-1 pb-16">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/singer-keys" element={<SingerKeyList />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <BottomNavigation className="fixed bottom-0 left-0 right-0 border-t border-border bg-white p-4 dark:bg-gray-800 flex justify-around z-10" />
           </div>
         </BrowserRouter>
       </ThemeProvider>
