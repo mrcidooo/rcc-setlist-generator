@@ -11,7 +11,6 @@ import {
 } from "./constants";
 import type { MoveDirection, Setlist, SetlistFormData, AvailableSong, AvailableSinger } from "./types";
 import { supabase } from "@/lib/supabaseClient";
-import { transposeChords } from "@/utils/transpose";
 
 export function useSetlistBuilder() {
   const [setlist, setSetlist] = useState<Setlist>(initialSetlist);
@@ -186,13 +185,6 @@ export function useSetlistBuilder() {
     }
 
     const recommendedSongKey = keyMatrix[song.id]?.[singer.id] ?? getRecommendedKey(song.id, singer.id);
-    const selectedKey = formData.selectedKey || recommendedSongKey || song.originalKey;
-
-    // Transpose lyrics if needed
-    const transposedLyrics =
-      selectedKey && selectedKey !== song.originalKey
-        ? transposeChords(formData.notes ?? "", song.originalKey, selectedKey)
-        : formData.notes ?? "";
 
     const newSongEntry = {
       id: Date.now().toString(),
@@ -200,10 +192,10 @@ export function useSetlistBuilder() {
       songTitle: song.title,
       singerId: singer.id,
       singerName: singer.name,
-      selectedKey,
+      selectedKey:
+        formData.selectedKey || recommendedSongKey || song.originalKey,
       originalKey: song.originalKey,
       notes: formData.notes.trim(),
-      lyrics: transposedLyrics, // Store transposed lyrics
       order: setlist.songs.length + 1,
     };
 
