@@ -11,6 +11,7 @@ import SetlistSongList from "./SetlistSongList";
 import { useSetlistBuilder } from "./useSetlistBuilder";
 import { Sparkles, Library } from "lucide-react";
 import type { AvailableSong, AvailableSinger } from "./types";
+import ExportDialog from "./ExportDialog";
 
 export default function SetlistBuilder() {
   const {
@@ -29,11 +30,13 @@ export default function SetlistBuilder() {
     moveSong,
     handleSaveSetlist,
     handleGeneratePDF,
+    handleGenerateDOCX,
     toggleSongForm,
   } = useSetlistBuilder();
 
-  // Dialog visibility state
+  // Dialog visibility states
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Ref to the song‑order list so we can scroll to it after adding a track
   const songListRef = useRef<HTMLDivElement>(null);
@@ -117,9 +120,17 @@ export default function SetlistBuilder() {
       <div className="pt-2">
         <SetlistBuilderActions
           onSaveSetlist={handleSaveSetlist}
-          onGeneratePDF={handleGeneratePDF}
+          onGeneratePDF={() => setExportOpen(true)}
         />
       </div>
+
+      {/* Choice Prompt Dialog for PDF or DOCX */}
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        onExportPDF={handleGeneratePDF}
+        onExportDOCX={handleGenerateDOCX}
+      />
     </div>
   );
 }

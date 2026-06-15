@@ -12,6 +12,7 @@ import {
 import type { MoveDirection, Setlist, SetlistFormData, AvailableSong, AvailableSinger } from "./types";
 import { supabase } from "@/lib/supabaseClient";
 import { generateSetlistPDF } from "@/utils/pdfGenerator";
+import { generateSetlistDOCX } from "@/utils/docxGenerator";
 
 export function useSetlistBuilder() {
   const [setlist, setSetlist] = useState<Setlist>(initialSetlist);
@@ -289,21 +290,49 @@ export function useSetlistBuilder() {
   };
 
   // -----------------------------------------------------------------
-  // PDF Generation with Custom Transposed Layout & Markups
+  // PDF / DOCX Generation with Custom Transposed Layout & Markups
   // -----------------------------------------------------------------
   const handleGeneratePDF = () => {
     if (!setlist.name.trim() || !setlist.date || setlist.songs.length === 0) {
       toast({
-        title: "PDF not generated",
+        title: "Export failed",
+        description: "Complete the setlist details and add songs first.",
+      });
+      return;
+    }
+    generateSetlistPDF(setlist.name, setlist.date, setlist.songs);
+    toast({
+      title: "PDF generated successfully",
+      description: "Direct PDF download triggered.",
+    });
+  };
+
+  const handleGenerateDOCX = async () => {
+    if (!setlist.name.trim() || !setlist.date || setlist.songs.length === 0) {
+      toast({
+        title: "Export failed",
         description: "Complete the setlist details and add songs first.",
       });
       return;
     }
 
-    generateSetlistPDF(setlist.name, setlist.date, setlist.songs);
+    const songIds = setlist.songs.map((s) => s.songId);
+    const { data, error } = await supabase
+      .from("songs")
+      .select("id, lyrics")
+      .in("id", songIds);
+
+    const lyricsMap: Record<string, string> = {};
+    if (!error && data) {
+      data.forEach((r) => {
+        lyricsMap[String(r.id)] = r.lyrics || "";
+      });
+    }
+
+    generateSetlistDOCX(setlist.name, setlist.date, setlist.songs, lyricsMap);
     toast({
-      title: "PDF generated successfully",
-      description: "Transposed song layout has been built and opened in a new tab.",
+      title: "DOCX generated successfully",
+      description: "Word document download triggered.",
     });
   };
 
@@ -327,6 +356,7 @@ export function useSetlistBuilder() {
     moveSong,
     handleSaveSetlist,
     handleGeneratePDF,
+    handleGenerateDOCX,
     toggleSongForm,
   };
 }
