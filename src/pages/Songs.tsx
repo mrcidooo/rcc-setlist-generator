@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Sparkles } from "lucide-react";
+import { Music, Plus, Search, Sparkles, Play, Pause, MoreHorizontal, Clock } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
@@ -249,19 +249,20 @@ export default function Songs() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 pb-32 max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black text-white p-4 pb-32 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-green-500/10 text-green-500 border border-green-500/10">
               <Music className="h-5 w-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Song Library
+            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
+              Your Library <Sparkles className="h-4 w-4 text-green-400 animate-pulse" />
             </h1>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Search songs, edit chord profiles, and update performance indices.
+          <p className="mt-1 text-sm text-gray-400">
+            Manage your song collection with chord charts and vocal arrangements.
           </p>
         </div>
 
@@ -280,19 +281,19 @@ export default function Songs() {
               });
             }
           }}
-          className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
+          className="h-11 rounded-[18px] bg-green-500 text-black shadow-[0_4px_15px_rgba(34,197,94,0.35)] font-bold px-6 flex items-center gap-2"
         >
-          <Plus className="mr-2 h-4 w-4" />
-          {isAddingSong ? (editingSong ? "Switch to Upload" : "Hide Form") : "Upload New Song"}
+          <Plus className="h-4 w-4" />
+          {isAddingSong ? "Hide Form" : "Upload New Song"}
         </Button>
       </header>
 
       {/* Upload/Edit Form */}
       {isAddingSong && (
-        <Card className="neu-card border-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:bg-card/75">
+        <Card className="neu-card border-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 dark:bg-card/75">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
+              <Sparkles className="h-5 w-5 text-green-500 animate-pulse" />
               <div>
                 <CardTitle className="text-lg font-bold">{editingSong ? `Edit Song: ${editingSong.title}` : "Upload Song Record"}</CardTitle>
                 <CardDescription>
@@ -305,52 +306,52 @@ export default function Songs() {
             <form onSubmit={handleAddOrUpdate} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="song-title" className="text-xs font-bold text-muted-foreground uppercase">Song Title *</Label>
+                  <Label htmlFor="song-title" className="text-xs font-bold text-gray-400 uppercase">Song Title *</Label>
                   <Input
                     id="song-title"
                     name="title"
                     value={form.title}
                     onChange={handleInputChange}
                     placeholder="e.g., Way Maker"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    className="h-11 rounded-[18px] bg-gray-900/50 border border-gray-700 text-white focus:border-green-500"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="song-key" className="text-xs font-bold text-muted-foreground uppercase">Original Key *</Label>
+                  <Label htmlFor="song-key" className="text-xs font-bold text-gray-400 uppercase">Original Key *</Label>
                   <Input
                     id="song-key"
                     name="originalKey"
                     value={form.originalKey}
                     onChange={handleInputChange}
                     placeholder="e.g., C, D, Bb, Eb"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    className="h-11 rounded-[18px] bg-gray-900/50 border border-gray-700 text-white focus:border-green-500"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="song-tempo" className="text-xs font-bold text-muted-foreground uppercase">Tempo</Label>
+                  <Label htmlFor="song-tempo" className="text-xs font-bold text-gray-400 uppercase">Tempo</Label>
                   <Input
                     id="song-tempo"
                     name="tempo"
                     value={form.tempo}
                     onChange={handleInputChange}
                     placeholder="e.g., 72 BPM"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    className="h-11 rounded-[18px] bg-gray-900/50 border border-gray-700 text-white focus:border-green-500"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="song-tags" className="text-xs font-bold text-muted-foreground uppercase">Tags</Label>
+                  <Label htmlFor="song-tags" className="text-xs font-bold text-gray-400 uppercase">Tags</Label>
                   <Input
                     id="song-tags"
                     name="tags"
                     value={form.tags}
                     onChange={handleInputChange}
                     placeholder="e.g., Praise, Worship"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                    className="h-11 rounded-[18px] bg-gray-900/50 border border-gray-700 text-white focus:border-green-500"
                   />
                 </div>
               </div>
@@ -358,14 +359,14 @@ export default function Songs() {
               {/* ---- NEW UI: Detected chords preview ---- */}
               {detectedChords.length > 0 && (
                 <div className="flex flex-wrap gap-2 py-2">
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="text-sm font-medium text-gray-400">
                     Detected chords:
                   </span>
                   {detectedChords.map((chord) => (
                     <Badge
                       key={chord}
                       variant="secondary"
-                      className="rounded-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-0 text-[10px] font-bold"
+                      className="rounded-[10px] bg-green-500/10 text-green-400 border-0 text-[10px] font-bold"
                     >
                       {chord}
                     </Badge>
@@ -374,27 +375,27 @@ export default function Songs() {
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="song-notes" className="text-xs font-bold text-muted-foreground uppercase">Performance Notes</Label>
+                <Label htmlFor="song-notes" className="text-xs font-bold text-gray-400 uppercase">Performance Notes</Label>
                 <Textarea
                   id="song-notes"
                   name="notes"
                   value={form.notes}
                   onChange={handleInputChange}
                   placeholder="Any structural notes about this song..."
-                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
+                  className="rounded-[18px] bg-gray-900/50 border border-gray-700 text-white focus:border-green-500"
                   rows={3}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="song-lyrics" className="text-xs font-bold text-muted-foreground uppercase">Lyrics & Chord Matrix</Label>
+                <Label htmlFor="song-lyrics" className="text-xs font-bold text-gray-400 uppercase">Lyrics & Chord Matrix</Label>
                 <Textarea
                   id="song-lyrics"
                   name="lyrics"
                   value={form.lyrics}
                   onChange={handleInputChange}
                   placeholder="Paste lyrics with chords wrapped like: [C] Amazing [G] grace..."
-                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs"
+                  className="rounded-[18px] bg-gray-900/50 border border-gray-700 text-white font-mono text-xs focus:border-green-500"
                   rows={6}
                 />
               </div>
@@ -415,13 +416,13 @@ export default function Songs() {
                       lyrics: "",
                     });
                   }}
-                  className="rounded-xl font-semibold"
+                  className="rounded-xl font-semibold text-gray-400 hover:text-white"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit"
-                  className="rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5"
+                  className="rounded-xl bg-green-500 text-black shadow-[0_4px_12px_rgba(34,197,94,0.3)] font-bold px-5"
                 >
                   {editingSong ? "Update Record" : "Save Record"}
                 </Button>
@@ -431,28 +432,23 @@ export default function Songs() {
         </Card>
       )}
 
-      {/* Song List Frame */}
-      <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Browse Tracks</CardTitle>
-          <CardDescription>
-            Search, filter by comfortably assigned keys, and manage properties.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+      {/* Spotify-style song list */}
+      <div className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+          <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search active tracks..."
-                className="pl-10 h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10"
+                placeholder="Search songs..."
+                className="pl-10 h-10 rounded-full bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 focus:border-green-500"
               />
             </div>
 
             <Select value={selectedKey} onValueChange={setSelectedKey}>
-              <SelectTrigger className="h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 px-4 min-w-[140px]">
+              <SelectTrigger className="h-10 rounded-full bg-gray-900 border-gray-700 text-white px-4 min-w-[140px]">
                 <SelectValue placeholder="Filter key" />
               </SelectTrigger>
               <SelectContent className="rounded-[18px]">
@@ -465,38 +461,92 @@ export default function Songs() {
             </Select>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Badge variant="secondary" className="rounded-full bg-indigo-500/10 text-indigo-500 px-3 py-1 font-bold border-0 text-[10px]">
+          <div className="flex gap-2">
+            <Badge variant="secondary" className="rounded-full bg-gray-800 text-gray-300 px-3 py-1 font-bold text-[10px]">
               {songs.length} total tracks
             </Badge>
-            <Badge variant="outline" className="rounded-full px-3 py-1 font-bold text-[10px] border-black/10 dark:border-white/10">
-              {filteredSongs.length} matching criteria
+            <Badge variant="outline" className="rounded-full px-3 py-1 font-bold text-[10px] border-gray-700 text-gray-400">
+              {filteredSongs.length} matching
             </Badge>
           </div>
+        </div>
 
+        {/* Song list - Spotify style */}
+        <div className="space-y-2">
           {filteredSongs.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-black/10 dark:border-white/10 p-12 text-center bg-black/[0.01]">
-              <Music className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60 animate-pulse" />
-              <p className="font-bold">No tracks matched query</p>
-              <p className="text-xs text-muted-foreground mt-1">
+            <div className="rounded-[24px] border border-dashed border-gray-800 p-12 text-center bg-gray-900/20">
+              <Music className="mx-auto mb-3 h-10 w-10 text-gray-600 animate-pulse" />
+              <p className="font-bold text-gray-400">No tracks matched query</p>
+              <p className="text-xs text-gray-500 mt-1">
                 Try querying another title or upload a new chord matrix above.
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {filteredSongs.map((song) => (
-                <SongCard
-                  key={song.id}
-                  song={song}
-                  onPreview={handlePreview}
-                  onDelete={handleDeleteSong}
-                  onEdit={handleEditSong}
-                />
-              ))}
+            <div className="grid gap-3">
+              {filteredSongs.map((song, index) => {
+                const tagsArray = Array.isArray(song.tags) ? song.tags : [];
+                const isEven = index % 2 === 0;
+
+                return (
+                  <div
+                    key={song.id}
+                    className={`flex items-center gap-4 rounded-xl p-3 transition-all duration-200 group ${
+                      isEven ? "bg-gray-900/30" : "bg-gray-800/20"
+                    } hover:bg-gray-800/40`}
+                  >
+                    {/* Album art placeholder */}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 text-green-400 flex-shrink-0">
+                      <Music className="h-6 w-6" />
+                    </div>
+
+                    {/* Song info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white text-sm tracking-tight truncate">
+                          {song.title}
+                        </h3>
+                        <Badge variant="secondary" className="rounded-lg bg-gray-800 text-gray-400 text-[10px] font-bold border-0">
+                          {song.originalKey}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {tagsArray.slice(0, 2).map((tag) => (
+                          <span key={tag} className="text-[11px] text-gray-500 font-medium">
+                            {tag}
+                          </span>
+                        ))}
+                        {song.tempo && (
+                          <span className="text-[11px] text-gray-500 font-medium">• {song.tempo}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePreview(song)}
+                        className="h-8 w-8 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditSong(song)}
+                        className="h-8 w-8 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Preview Dialog */}
       <SongPreviewDialog
@@ -506,4 +556,5 @@ export default function Songs() {
       />
     </div>
   );
-}
+}</arg_value>
+<description="Redesigned Songs page with Spotify-inspired aesthetic featuring dark theme, album art placeholders, and clean track listings">
