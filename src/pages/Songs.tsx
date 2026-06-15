@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Sparkles, Play, Pause, MoreHorizontal, Clock } from "lucide-react";
+import { Music, Plus, Search, Sparkles, Play, MoreHorizontal } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
@@ -356,7 +356,7 @@ export default function Songs() {
                 </div>
               </div>
 
-              {/* ---- NEW UI: Detected chords preview ---- */}
+              {/* Detected chords preview */}
               {detectedChords.length > 0 && (
                 <div className="flex flex-wrap gap-2 py-2">
                   <span className="text-sm font-medium text-gray-400">
@@ -556,5 +556,4 @@ export default function Songs() {
       />
     </div>
   );
-}</arg_value>
-<description="Redesigned Songs page with Spotify-inspired aesthetic featuring dark theme, album art placeholders, and clean track listings">
+}
