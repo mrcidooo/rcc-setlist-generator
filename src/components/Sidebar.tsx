@@ -1,1 +1,48 @@
-"use client"; import { Link, useLocation } from "react-router-dom"; import { Home, Music, Users, Calendar, List } from "lucide-react"; import { Button } from "@/components/ui/button"; import { cn } from "@/lib/utils"; const navItems = [ { to: "/", label: "Dashboard", icon: Home }, { to: "/songs", label: "Songs", icon: Music }, { to: "/setlists", label: "Setlists", icon: Calendar, highlight: true }, { to: "/singers", label: "Singers", icon: Users }, { to: "/singer-keys", label: "Singer Keys", icon: List }, ]; export const Sidebar = () => { const location = useLocation(); return ( <nav className="h-screen w-full border-t border-white/20 p-4 shadow-lg dark:shadow-none flex flex-col"> <div className="flex flex-col space-y-2"> {navItems.map((item) => { const isActive = location.pathname === item.to; const Icon = item.icon; return ( <Link key={item.to} to={item.to} className={cn( "flex flex-col items-center -top-4", isActive ? "relative" : "" )}> <div className={cn( "absolute h-14 w-14 rounded-full bg-indigo-500/30 blur-md transition-opacity duration-300", isActive ? "opacity-100" : "opacity-0" )} /> <Button variant={isActive ? "default" : "ghost"} className={cn( "h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.5)] border border-white/10 hover:scale-105 active:scale-95 transition-transform duration-300", isActive ? "text-indigo-500 dark:text-indigo-400 scale-105" : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5" )} aria-current={isActive ? "page" : undefined} > <Icon className="h-6 w-6 text-white" /> </Button> <span className={cn( "text-[10px] font-bold transition-colors duration-300 mb-1", isActive ? "text-indigo-500 dark:text-indigo-400" : "text-muted-foreground" )}> {item.label} </span> </Link> ); })} </div> </nav> ); };
+"use client";
+
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  Settings,
+  Music,
+  Users,
+  Calendar,
+  FileText,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const navItems = [
+  { to: "/", label: "Dashboard", icon: Home },
+  { to: "/songs", label: "Songs", icon: Music },
+  { to: "/singers", label: "Singers", icon: Users },
+  { to: "/setlists", label: "Setlists", icon: Calendar },
+  { to: "/singer-keys", label: "Singer Keys", icon: Music },
+  { to: "/settings", label: "Settings", icon: Settings },
+];
+
+export const Sidebar = () => {
+  const location = useLocation();
+
+  return (
+    <nav className="h-screen w-full border-t border-border bg-gradient-to-b from-background/80 to-background/60 p-4 shadow-lg dark:from-background/90 dark:to-background/70 flex flex-col">
+      <div className="flex flex-col space-y-2">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.to;
+          const Icon = item.icon;
+
+          return (
+            <Link key={item.to} to={item.to}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className="w-full justify-start text-left"
+              >
+                <Icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </Button>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
