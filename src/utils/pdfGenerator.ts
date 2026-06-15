@@ -1,34 +1,15 @@
 "use client";
 
+import { jsPDF } from "jspdf";
 import { SetlistSong } from "@/components/setlist-builder/types";
 import { transposeLyrics } from "./transposer";
 import { supabase } from "@/lib/supabaseClient";
 
-/**
- * Helper to split lyrics by bracket chords [] and angle segments <>
- */
-function formatLyricsHTML(lyrics: string): string {
-  if (!lyrics) return '<p style="font-style: italic; color: #666;">No lyrics available.</p>';
-  
-  const lines = lyrics.split("\n");
-  return lines
-    .map((line) => {
-      const parts = line.split(/(\[[^\]]+\]|<[^>]+>)/g);
-      const formattedParts = parts.map((part) => {
-        if (/^\[[^\]]+\]$/.test(part)) {
-          return `<strong style="color: #6366F1; font-weight: bold; font-family: monospace;">${part}</strong>`;
-        }
-        if (/^<[^>]+>$/.test(part)) {
-          return `<strong style="color: #8B5CF6; font-weight: bold; text-transform: uppercase; font-family: sans-serif;">${part}</strong>`;
-        }
-        return `<span>${part}</span>`;
-      });
-      return `<p style="margin: 4px 0; min-height: 1.2em; font-family: monospace; font-size: 13px; line-height: 1.5; font-weight: normal; color: #1f2937;">${formattedParts.join("")}</p>`;
-    })
-    .join("");
-}
-
-export async function generateSetlistPDF(setlistName: string, serviceDate: string, songs: SetlistSong[]) {
+export async function generateSetlistPDF(
+  setlistName: string,
+  serviceDate: string,
+  songs: SetlistSong[]
+) {
   if (songs.length === 0) return;
 
   // 1. Fetch full lyrics for all songs in the setlist
@@ -45,10 +26,46 @@ export async function generateSetlistPDF(setlistName: string, serviceDate: strin
     });
   }
 
-  // 2. Build beautifully formatted HTML document for printing
-  let songsHTML = "";
+  // 2. Initialize a clean direct-download jsPDF Document
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 
+  const margin = 20;
+  const pageHeight = 297;
+  const limitY = 270;
+  let y = 20;
+
+  const checkPageBreak = (neededHeight: number) => {
+    if (y + neededHeight > limitY) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  // Add Setlist Header on the first page
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(17, 24, 39); // Very dark gray #111827
+  doc.text(setlistName.toUpperCase(), margin, y);
+  y += 8;
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(107, 114, 128); // #6B7280
+  doc.text(`Service Date: ${new Date(serviceDate).toLocaleDateString()}`, margin, y);
+  y += 15;
+
+  // 3. Process each song
   songs.forEach((song, idx) => {
+    // Each song starts on a new page except potentially the very first if we have enough space
+    if (idx > 0) {
+      doc.addPage();
+      y = 20;
+    }
+
     const rawLyrics = lyricsMap[song.songId] || "";
     const transposedLyrics = transposeLyrics(rawLyrics, song.originalKey, song.selectedKey);
     const isTransposed = song.selectedKey.trim() !== song.originalKey.trim();
@@ -56,112 +73,75 @@ export async function generateSetlistPDF(setlistName: string, serviceDate: strin
       ? `KEY: ${song.selectedKey} (TRANSPOSED FROM ${song.originalKey})` 
       : `KEY: ${song.originalKey} (ORIGINAL KEY)`;
 
-    songsHTML += `
-      <div class="song-block" style="${idx > 0 ? "page-break-before: always; margin-top: 30px;" : ""}">
-        <!-- Yellow highlighted bold header -->
-        <div style="background-color: #fef08a; padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 5px solid #eab308;">
-          <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #111827; text-transform: uppercase; font-family: sans-serif;">
-            ${song.songTitle.toUpperCase()} &mdash; ${keyInfo}
-          </h2>
-          <div style="font-size: 12px; color: #4b5563; font-weight: bold; margin-top: 4px; font-family: sans-serif;">
-            LEAD VOCAL: ${song.singerName.toUpperCase()}
-          </div>
-        </div>
+    // --- RENDER YELLOW HIGHLIGHTED HEADER BOX ---
+    checkPageBreak(25);
+    doc.setFillColor(254, 240, 138); // Yellow highlight #FEF08A
+    doc.rect(margin, y, 170, 22, "F");
 
-        <!-- Performance Notes -->
-        ${
-          song.notes
-            ? `<div style="font-style: italic; color: #4b5563; font-size: 13px; margin-bottom: 16px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-family: sans-serif;">
-                Performance Notes: ${song.notes}
-               </div>`
-            : ""
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(17, 24, 39); // High contrast dark charcoal
+    doc.text(song.songTitle.toUpperCase(), margin + 5, y + 9);
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99); // Medium-dark gray
+    doc.text(`${keyInfo}   |   VOCAL: ${song.singerName.toUpperCase()}`, margin + 5, y + 16);
+    y += 28;
+
+    // --- RENDER LYRICS WITH INLINE CHORDS & SEGMENTS ---
+    const lines = transposedLyrics.split("\n");
+    doc.setFontSize(11);
+
+    lines.forEach((line) => {
+      // Split by bracket chords [] and angle segments <>
+      const parts = line.split(/(\[[^\]]+\]|<[^>]+>)/g);
+      
+      // Calculate height needed for this line
+      checkPageBreak(7);
+      
+      let currentX = margin;
+      doc.setTextColor(26, 26, 26); // Super dark gray for high readability
+
+      parts.forEach((part) => {
+        if (!part) return;
+
+        if (part.startsWith("<") && part.endsWith(">")) {
+          // Song Segment (Intro, Chorus, Verse etc.) -> Bold
+          const segmentName = part.slice(1, -1).toUpperCase();
+          doc.setFont("Helvetica", "bold");
+          doc.text(segmentName, currentX, y);
+          currentX += doc.getTextWidth(segmentName + " ");
+        } else if (part.startsWith("[") && part.endsWith("]")) {
+          // Chord -> Bold and without the brackets []
+          const chordName = part.slice(1, -1);
+          doc.setFont("Helvetica", "bold");
+          doc.text(chordName, currentX, y);
+          currentX += doc.getTextWidth(chordName + " ");
+        } else {
+          // Normal lyric text -> Regular font weight
+          doc.setFont("Helvetica", "normal");
+          doc.text(part, currentX, y);
+          currentX += doc.getTextWidth(part);
         }
+      });
 
-        <!-- Transposed Lyrics & Chords -->
-        <div style="background: #fafafa; border: 1px solid #e5e7eb; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-          ${formatLyricsHTML(transposedLyrics)}
-        </div>
-      </div>
-    `;
+      y += 7; // Increment line spacing
+    });
+
+    // --- RENDER PERFORMANCE NOTES (UNDER THE SONG) ---
+    if (song.notes) {
+      y += 6;
+      checkPageBreak(12);
+      doc.setFont("Helvetica", "italic");
+      doc.setFontSize(11);
+      doc.setTextColor(75, 85, 99);
+      doc.text(`Performance Notes: ${song.notes}`, margin, y);
+      y += 10;
+    }
   });
 
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) return;
-
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>${setlistName} - Setlist PDF</title>
-        <style>
-          @media print {
-            body {
-              background: white;
-              color: black;
-              margin: 1.5cm;
-            }
-            .no-print {
-              display: none;
-            }
-          }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 40px;
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #f9fafb;
-          }
-          .header-bar {
-            border-bottom: 3px double #e5e7eb;
-            padding-bottom: 16px;
-            margin-bottom: 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-          }
-          button.print-btn {
-            background-color: #6366f1;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-            transition: all 0.2s;
-          }
-          button.print-btn:hover {
-            background-color: #4f46e5;
-            transform: translateY(-1px);
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header-bar no-print">
-          <div>
-            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #111827;">Setlist PDF Print Preview</h1>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #6b7280;">Press 'Save as PDF' or Print from the system dialog.</p>
-          </div>
-          <button class="print-btn" onclick="window.print()">Print / Save to PDF</button>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-          <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #111827; text-transform: uppercase;">${setlistName}</h1>
-          <p style="margin: 4px 0 0; font-size: 14px; color: #4b5563; font-weight: 600;">Service Date: ${new Date(serviceDate).toLocaleDateString()}</p>
-        </div>
-
-        ${songsHTML}
-
-        <script>
-          // Auto-trigger print dialog for user convenience
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 500);
-          }
-        </script>
-      </body>
-    </html>
-  `);
-  printWindow.document.close();
+  // Save/Download PDF Directly
+  const fileName = `${setlistName.replace(/\s+/g, "_")}_Setlist.pdf`;
+  doc.save(fileName);
 }
