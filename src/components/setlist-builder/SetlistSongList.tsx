@@ -17,6 +17,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { SongPreviewDialog } from "@/components/SongPreviewDialog";
 import type { MoveDirection, SetlistSong } from "./types";
 
 type SetlistSongListProps = {
@@ -30,6 +31,19 @@ export default function SetlistSongList({
   onRemoveSong,
   onMoveSong,
 }: SetlistSongListProps) {
+  const [previewSong, setPreviewSong] = useState<SetlistSong | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const handlePreview = (song: SetlistSong) => {
+    setPreviewSong(song);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewSong(null);
+  };
+
   return (
     <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
       <CardHeader className="pb-4">
@@ -55,7 +69,7 @@ export default function SetlistSongList({
                 className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  {/* Glowing step circle */}
+                  {/* Glowing step circle */} 
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[18px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 font-extrabold text-sm border border-indigo-500/15 shadow-inner">
                     {songItem.order}
                   </div>
@@ -116,6 +130,14 @@ export default function SetlistSongList({
                     <Trash2 className="mr-0.5 h-3.5 w-3.5" />
                     Remove
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePreview(songItem)}
+                    className="h-8 rounded-[10px] text-[11px] font-semibold text-indigo-500 hover:bg-indigo-500/20"
+                  >
+                    Preview
+                  </Button>
                 </div>
               </div>
             ))}
@@ -123,5 +145,12 @@ export default function SetlistSongList({
         )}
       </CardContent>
     </Card>
+
+    {/* Preview Dialog */}
+    <SongPreviewDialog
+      song={previewSong}
+      open={isPreviewOpen}
+      onClose={closePreview}
+    />
   );
 }

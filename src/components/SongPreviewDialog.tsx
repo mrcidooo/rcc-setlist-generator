@@ -42,11 +42,7 @@ const formatLyrics = (raw: string) => {
   });
 };
 
-export default function SongPreviewDialog({
-  song,
-  open,
-  onClose,
-}: SongPreviewDialogProps) {
+export default function SongPreviewDialog({ song, open, onClose }: SongPreviewDialogProps) {
   if (!song) return null;
 
   return (
