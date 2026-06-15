@@ -33,7 +33,7 @@ export async function generateSetlistPDF(setlistName: string, serviceDate: strin
 
   // 1. Fetch full lyrics for all songs in the setlist
   const songIds = songs.map((s) => s.songId);
-  const { data: lyricsData, error } = await supabase
+  const { data, error } = await supabase
     .from("songs")
     .select("id, lyrics")
     .in("id", songIds);
