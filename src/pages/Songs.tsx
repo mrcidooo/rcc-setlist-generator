@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Sparkles, Trash2, Edit } from "lucide-react";
+import { Music, Plus, Search, Sparkles } from "lucide-react";
 import { SongCard, type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
@@ -89,7 +89,7 @@ export default function Songs() {
   }, []);
 
   // -----------------------------------------------------------------
-  // Helper: extract unique chords from lyrics (anything inside []) 
+  // Helper: extract unique chords from lyrics (anything inside [])
   // -----------------------------------------------------------------
   const extractChords = (text: string): string[] => {
     const matches = text.match(/\[([^\]\s]+)\]/g);
@@ -170,9 +170,7 @@ export default function Songs() {
 
       setSongs((cur) =>
         cur.map((s) =>
-          s.id === editingSong.id
-            ? { ...s, ...payload, originalKey: form.originalKey, addedAt: s.addedAt }
-            : s,
+          s.id === editingSong.id ? { ...s, ...payload, originalKey: form.originalKey, addedAt: s.addedAt } : s,
         ),
       );
       toast({ title: "Song updated", description: `${payload.title} updated.` });
@@ -433,7 +431,7 @@ export default function Songs() {
         </Card>
       )}
 
-      {/* Spotify-like Track List Frame */}
+      {/* Song List Frame */}
       <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">Browse Tracks</CardTitle>
@@ -485,75 +483,15 @@ export default function Songs() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {filteredSongs.map((song) => (
-                <div
+                <SongCard
                   key={song.id}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/10 dark:bg-white/5 hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-300 cursor-pointer"
-                >
-                  {/* Left: Album art placeholder (music icon) */}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-500">
-                    <Music className="h-5 w-5" />
-                  </div>
-
-                  {/* Middle: Track info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium text-foreground truncate max-w-xs">
-                        {song.title}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <span className="text-xs font-medium">Orig:</span>
-                          <span className="text-xs">{song.originalKey}</span>
-                        </span>
-                        {song.tempo && (
-                          <span className="flex items-center gap-1 mx-2">
-                            <span className="text-xs font-medium">Tempo:</span>
-                            <span className="text-xs">{song.tempo}</span>
-                          </span>
-                        )}
-                        {song.tags.length > 0 && (
-                          <span className="flex items-center gap-1 mx-2">
-                            <span className="text-xs font-medium">Tags:</span>
-                            <span className="text-xs">{song.tags.join(", ")}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Action buttons (Preview, Edit, Delete) */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handlePreview(song)}
-                      aria-label={`Preview ${song.title}`}
-                      className="h-8 w-8 rounded-full hover:bg-white/20 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground"
-                    >
-                      <Music className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditSong(song)}
-                      aria-label={`Edit ${song.title}`}
-                      className="h-8 w-8 rounded-full hover:bg-white/20 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteSong(song.id)}
-                      aria-label={`Delete ${song.title}`}
-                      className="h-8 w-8 rounded-full hover:bg-red-500/20 text-red-500 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                  song={song}
+                  onPreview={handlePreview}
+                  onDelete={handleDeleteSong}
+                  onEdit={handleEditSong}
+                />
               ))}
             </div>
           )}
