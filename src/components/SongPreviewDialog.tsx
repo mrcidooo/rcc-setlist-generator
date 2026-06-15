@@ -24,7 +24,8 @@ type SongPreviewDialogProps = {
 const formatLyrics = (raw: string) => {
   const lines = raw.split("\n");
   return lines.map((line, idx) => {
-    const parts = line.split(/(\[[^\]]+\])/g);
+    // Split by both [chords] and <sections>
+    const parts = line.split(/(\[[^\]]+\]|<[^>]+>)/g);
     return (
       <p key={idx} className="whitespace-pre-wrap leading-relaxed min-h-[1.5rem]">
         {parts.map((part, i) => {
@@ -32,6 +33,13 @@ const formatLyrics = (raw: string) => {
             return (
               <span key={i} className="text-indigo-500 dark:text-indigo-400 font-extrabold text-[12px] bg-indigo-500/10 px-1.5 py-0.5 rounded-[6px] mx-0.5 inline-block">
                 {part.replace(/[\[\]]/g, "")}
+              </span>
+            );
+          }
+          if (/^<[^>]+>$/.test(part)) {
+            return (
+              <span key={i} className="text-purple-600 dark:text-purple-300 font-black text-[11px] bg-purple-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider mx-1 inline-block border border-purple-500/10 shadow-[0_0_8px_rgba(168,85,247,0.15)]">
+                {part.replace(/[<>]/g, "")}
               </span>
             );
           }
@@ -58,7 +66,7 @@ export default function SongPreviewDialog({
               {song.title}
             </DialogTitle>
             <DialogDescription className="text-xs font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" /> Original Key: {song.originalKey}
+              <Sparkles className="h-3.5 w-3.5" /> Performance Key: {song.originalKey}
             </DialogDescription>
           </div>
           <Button
