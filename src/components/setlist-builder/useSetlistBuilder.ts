@@ -11,6 +11,7 @@ import {
 } from "./constants";
 import type { MoveDirection, Setlist, SetlistFormData, AvailableSong, AvailableSinger } from "./types";
 import { supabase } from "@/lib/supabaseClient";
+import { generateSetlistPDF } from "@/utils/pdfGenerator";
 
 export function useSetlistBuilder() {
   const [setlist, setSetlist] = useState<Setlist>(initialSetlist);
@@ -288,7 +289,7 @@ export function useSetlistBuilder() {
   };
 
   // -----------------------------------------------------------------
-  // PDF placeholder (unchanged)
+  // PDF Generation with Custom Transposed Layout & Markups
   // -----------------------------------------------------------------
   const handleGeneratePDF = () => {
     if (!setlist.name.trim() || !setlist.date || setlist.songs.length === 0) {
@@ -299,9 +300,10 @@ export function useSetlistBuilder() {
       return;
     }
 
+    generateSetlistPDF(setlist.name, setlist.date, setlist.songs);
     toast({
-      title: "PDF ready",
-      description: "Your setlist PDF would be generated here.",
+      title: "PDF generated successfully",
+      description: "Transposed song layout has been built and opened in a new tab.",
     });
   };
 
