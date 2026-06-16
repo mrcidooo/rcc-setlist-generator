@@ -21,14 +21,14 @@ export const Header = () => {
 
   useEffect(() => {
     if (buttonRipple) {
-      const timer = setTimeout(() => setButtonRipple(false), 300);
+      const timer = setTimeout(() => setButtonRipple(false), 200);
       return () => clearTimeout(timer);
     }
   }, [buttonRipple]);
 
   useEffect(() => {
     if (screenRipple) {
-      const timer = setTimeout(() => setScreenRipple(false), 600);
+      const timer = setTimeout(() => setScreenRipple(false), 300);
       return () => clearTimeout(timer);
     }
   }, [screenRipple]);
@@ -36,7 +36,7 @@ export const Header = () => {
   return (
     <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
       {screenRipple && (
-        <div className="fixed inset-0 pointer-events-none animate-ripple-screen bg-indigo-500/10 rounded-full" />
+        <div className="fixed inset-0 pointer-events-none animate-[ripple-screen_0.3s_ease-out_forwards] bg-indigo-500/10 rounded-full" />
       )}
 
       <div className="flex items-center justify-between">
@@ -82,7 +82,7 @@ export const Header = () => {
               className={`
                 absolute inset-0 rounded-full bg-primary/20 
                 transform scale-0 
-                ${buttonRipple ? "animate-[ripple_0.3s_ease-out]" : ""}`}
+                ${buttonRipple ? "animate-[ripple_0.2s_ease-out]" : ""}`}
             />
             {isDark ? (
               <Sun className="h-4.5 w-4.5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />

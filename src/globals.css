@@ -2,17 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import the dark‑mode transition styles */
-@import "./styles/darkTransition.css";
-
-/* Global transitions and premium effects */
+/* Global transitions and premium effects - tuned to be faster and smoother */
 button,
 [role="button"],
 a,
 input,
 select,
-textarea {
-  @apply transition-all duration-300 ease-out;
+textarea,
+body,
+div,
+header,
+nav,
+section,
+span,
+p {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
 button:active,
@@ -123,7 +129,7 @@ button:not([disabled]),
   100% { transform: translateY(0); }
 }
 
-/* Full‑screen ripple animation for dark‑mode toggle */
+/* Full‑screen ripple animation for dark‑mode toggle - tuned to be faster (300ms) */
 @keyframes ripple-screen {
   0% {
     transform: scale(0);
@@ -144,12 +150,12 @@ button:not([disabled]),
   animation: kick 0.4s ease-out;
 }
 .animate-ripple {
-  animation: ripple 0.3s ease-out;
+  animation: ripple 0.2s ease-out;
 }
 
 /* Apply the screen ripple animation via a utility class */
 .ripple-screen {
-  animation: ripple-screen 0.6s ease-out forwards;
+  animation: ripple-screen 0.3s ease-out forwards;
 }
 
 /* Utilities */
@@ -183,7 +189,7 @@ button:not([disabled]),
 
   /* Soft Neumorphic floating cards */
   .neu-card {
-    @apply rounded-[28px] border border-white/20 dark:border-white/5 transition-all duration-300;
+    @apply rounded-[28px] border border-white/20 dark:border-white/5 transition-all duration-200;
     box-shadow: 
       8px 8px 24px -6px rgba(0, 0, 0, 0.08), 
       -8px -8px 24px -6px rgba(255, 255, 255, 0.4);
@@ -197,7 +203,7 @@ button:not([disabled]),
   }
 
   .neu-btn {
-    @apply rounded-[22px] transition-all duration-300 active:scale-95;
+    @apply rounded-[22px] transition-all duration-200 active:scale-95;
     box-shadow: 
       0 4px 14px -3px rgba(99, 102, 241, 0.15),
       8px 8px 24px -6px rgba(0, 0, 0, 0.06), 
@@ -229,7 +235,7 @@ button:not([disabled]),
 /* Base styles configuration */
 @layer base {
   body {
-    @apply bg-background text-foreground overflow-x-hidden select-none;
+    @apply bg-background text-foreground overflow-x-hidden select-none transition-colors duration-200;
     background-image: 
       radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
       radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
