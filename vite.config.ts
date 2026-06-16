@@ -4,17 +4,19 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
+  plugins: [dyadComponentTagger(), react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // Ensure the public folder (which now contains service-worker.js) is served.
   server: {
     host: "::",
     port: 8080,
     fs: {
-      allow: ["./public/service-worker.js"]
-    }
+      // Allow Vite to serve the service worker from the public directory.
+      allow: ["./public"],
+    },
   },
-  plugins: [dyadComponentTagger(), react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src")
-    }
-  }
 });
