@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,13 +18,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Music, Plus, Search, Sparkles, Play, Edit2, Trash2, Eye } from "lucide-react";
 import { type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
 import SongDetailsDialog from "@/components/SongDetailsDialog";
+import SongUploadDialog from "@/components/SongUploadDialog";
+
+type SongForm = {
+  title: string;
+  artist: string;
+  originalKey: string;
+  tempo: string;
+  notes: string;
+  lyrics: string;
+  youtubeLink: string;
+};
 
 const mapSong = (record: any): Song => ({
   id: record.id,
@@ -42,17 +51,8 @@ export default function Songs() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKey, setSelectedKey] = useState("all");
-  const [isAddingSong, setIsAddingSong] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
-  const [form, setForm] = useState({
-    title: "",
-    originalKey: "",
-    tempo: "",
-    tags: "",
-    notes: "",
-    lyrics: "",
-  });
-  const [detectedChords, setDetectedChords] = useState<string[]>([]);
   const { toast } = useToast();
 
   const fetchSongs = async () => {
@@ -82,18 +82,6 @@ export default function Songs() {
     };
   }, []);
 
-  const extractChords = (text: string): string[] => {
-    const matches = text.match(/\[([^\]\s]+)\]/g);
-    if (!matches) return [];
-    const cleaned = matches.map((m) => m.replace(/[\[\]]/g, "").trim());
-    return Array.from(new Set(cleaned));
-  };
-
-  useEffect(() => {
-    const chords = extractChords(form.lyrics);
-    setDetectedChords(chords);
-  }, [form.lyrics]);
-
   const availableKeys = useMemo(() => {
     const keys = Array.from(new Set(songs.map((s) => (s.originalKey || "").trim()))).sort();
     return ["all", ...keys];
@@ -109,16 +97,13 @@ export default function Songs() {
     });
   }, [songs, searchTerm, selectedKey]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setForm((c) => ({ ...c, [name]: value }));
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingSong(null);
   };
 
-  const handleAddOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!form.title.trim() || !form.originalKey.trim()) {
+  const handleUploadSubmit = async (data: SongForm) => {
+    if (!data.title.trim() || !data.originalKey.trim()) {
       toast({
         title: "Song not saved",
         description: "Title and original key are required.",
@@ -126,18 +111,15 @@ export default function Songs() {
       return;
     }
 
-    const parsedTags = form.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
     const payload = {
-      title: form.title.trim(),
-      original_key: form.originalKey.trim(),
-      tempo: form.tempo.trim(),
-      tags: parsedTags,
-      notes: form.notes.trim(),
-      lyrics: form.lyrics.trim(),
+      title: data.title.trim(),
+      original_key: data.originalKey.trim(),
+      artist: data.artist.trim(),
+      tempo: data.tempo.trim(),
+      tags: [],
+      notes: data.notes.trim(),
+      lyrics: data.lyrics.trim(),
+      youtube_link: data.youtubeLink.trim(),
     };
 
     if (editingSong) {
@@ -159,7 +141,6 @@ export default function Songs() {
                 title: payload.title,
                 originalKey: payload.original_key,
                 tempo: payload.tempo,
-                tags: payload.tags,
                 notes: payload.notes,
                 lyrics: payload.lyrics,
               }
@@ -168,22 +149,20 @@ export default function Songs() {
       );
       toast({ title: "Song updated", description: `${payload.title} updated.` });
     } else {
-      const { data, error } = await supabase.from("songs").insert(payload).select();
+      const { data: insertData, error } = await supabase.from("songs").insert(payload).select();
       if (error) {
         toast({ title: "Add failed", description: error.message });
         return;
       }
-      setSongs((cur) => [mapSong(data?.[0]), ...cur]);
+      setSongs((cur) => [mapSong(insertData?.[0]), ...cur]);
       toast({ title: "Song added", description: `${payload.title} added.` });
     }
 
-    setForm({ title: "", originalKey: "", tempo: "", tags: "", notes: "", lyrics: "" });
-    setIsAddingSong(false);
-    setEditingSong(null);
+    handleDialogClose();
   };
 
   const handleDeleteSong = (e: React.MouseEvent, songId: string) => {
-    e.stopPropagation(); // prevent clicking row Detail redirection
+    e.stopPropagation();
     const confirmed = window.confirm(
       "Are you sure you want to delete this song? This action cannot be undone.",
     );
@@ -200,34 +179,16 @@ export default function Songs() {
   };
 
   const handleEditSong = (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation(); // prevent clicking row Detail redirection
+    e.stopPropagation();
     setEditingSong(song);
-    const tagsArray = Array.isArray(song.tags) ? song.tags : [];
-    setForm({
-      title: song.title,
-      originalKey: song.originalKey || "",
-      tempo: song.tempo ?? "",
-      tags: tagsArray.join(", "),
-      notes: song.notes ?? "",
-      lyrics: song.lyrics ?? "",
-    });
-    setIsAddingSong(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    toast({
-      title: "Editing mode active",
-      description: `Editing "${song.title}" record in the form above.`,
-    });
+    setIsDialogOpen(true);
   };
 
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Floating Details Dialog state
-  const [detailsSong, setDetailsSong] = useState<Song | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
   const handlePreview = (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation(); // prevent clicking row Detail redirection
+    e.stopPropagation();
     setPreviewSong(song);
     setIsPreviewOpen(true);
   };
@@ -238,10 +199,14 @@ export default function Songs() {
   };
 
   const handleRowClick = (song: Song) => {
-    // Intercept with beautiful floating popup modal containing details & transposer
+    // Open details dialog instead of new tab
     setDetailsSong(song);
     setIsDetailsOpen(true);
   };
+
+  // Floating Details Dialog state
+  const [detailsSong, setDetailsSong] = useState<Song | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const closeDetails = () => {
     setIsDetailsOpen(false);
@@ -266,174 +231,34 @@ export default function Songs() {
         </div>
 
         <Button
-          onClick={() => {
-            setIsAddingSong((c) => !c);
-            if (isAddingSong) {
-              setEditingSong(null);
-              setForm({
-                title: "",
-                originalKey: "",
-                tempo: "",
-                tags: "",
-                notes: "",
-                lyrics: "",
-              });
-            }
-          }}
+          onClick={() => setIsDialogOpen(true)}
           className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
         >
           <Plus className="mr-2 h-4 w-4" />
-          {isAddingSong ? (editingSong ? "Switch to Upload" : "Hide Form") : "Upload New Song"}
+          Upload New Song
         </Button>
       </header>
 
-      {/* Upload/Edit Form */}
-      {isAddingSong && (
-        <Card className="neu-card border-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:bg-card/75">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
-              <div>
-                <CardTitle className="text-lg font-bold">
-                  {editingSong ? `Edit Song: ${editingSong.title}` : "Upload Song Record"}
-                </CardTitle>
-                <CardDescription>
-                  Configure song attributes, original keys, and lyrics/chords.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddOrUpdate} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="song-title" className="text-xs font-bold text-muted-foreground uppercase">
-                    Song Title *
-                  </Label>
-                  <Input
-                    id="song-title"
-                    name="title"
-                    value={form.title}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Way Maker"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="song-key" className="text-xs font-bold text-muted-foreground uppercase">
-                    Original Key *
-                  </Label>
-                  <Input
-                    id="song-key"
-                    name="originalKey"
-                    value={form.originalKey}
-                    onChange={handleInputChange}
-                    placeholder="e.g., C, D, Bb, Eb"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="song-tempo" className="text-xs font-bold text-muted-foreground uppercase">
-                    Tempo
-                  </Label>
-                  <Input
-                    id="song-tempo"
-                    name="tempo"
-                    value={form.tempo}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 72 BPM"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="song-tags" className="text-xs font-bold text-muted-foreground uppercase">
-                    Tags
-                  </Label>
-                  <Input
-                    id="song-tags"
-                    name="tags"
-                    value={form.tags}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Praise, Worship"
-                    className="h-11 rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-                  />
-                </div>
-              </div>
-
-              {detectedChords.length > 0 && (
-                <div className="flex flex-wrap gap-2 py-2">
-                  <span className="text-sm font-medium text-muted-foreground">Detected chords:</span>
-                  {detectedChords.map((chord) => (
-                    <Badge
-                      key={chord}
-                      variant="secondary"
-                      className="rounded-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-0 text-[10px] font-bold"
-                    >
-                      {chord}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="song-notes" className="text-xs font-bold text-muted-foreground uppercase">
-                  Performance Notes
-                </Label>
-                <Textarea
-                  id="song-notes"
-                  name="notes"
-                  value={form.notes}
-                  onChange={handleInputChange}
-                  placeholder="Any structural notes about this song..."
-                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10"
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="song-lyrics" className="text-xs font-bold text-muted-foreground uppercase">
-                  Lyrics & Chord Matrix
-                </Label>
-                <Textarea
-                  id="song-lyrics"
-                  name="lyrics"
-                  value={form.lyrics}
-                  onChange={handleInputChange}
-                  placeholder="Paste lyrics with chords wrapped like: [C] Amazing [G] grace..."
-                  className="rounded-[18px] bg-white/50 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs"
-                  rows={6}
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setIsAddingSong(false);
-                    setEditingSong(null);
-                    setForm({ title: "", originalKey: "", tempo: "", tags: "", notes: "", lyrics: "" });
-                  }}
-                  className="rounded-xl font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5"
-                >
-                  {editingSong ? "Update Record" : "Save Record"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      {/* Upload/Edit Dialog */}
+      <SongUploadDialog
+        open={isDialogOpen}
+        onOpenChange={handleDialogClose}
+        onSubmit={handleUploadSubmit}
+        initialData={
+          editingSong
+            ? {
+                title: editingSong.title,
+                artist: "",
+                originalKey: editingSong.originalKey,
+                tempo: editingSong.tempo ?? "",
+                notes: editingSong.notes ?? "",
+                lyrics: editingSong.lyrics ?? "",
+                youtubeLink: "",
+              }
+            : undefined
+        }
+        isEditing={!!editingSong}
+      />
 
       {/* MP3 Player Style Tracklist Frame */}
       <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
@@ -568,7 +393,7 @@ export default function Songs() {
         </CardContent>
       </Card>
 
-      {/* Simple Lyric Preview Dialog */}
+      {/* Preview Dialog */}
       <SongPreviewDialog song={previewSong} open={isPreviewOpen} onClose={closePreview} />
 
       {/* Floating Interactive Details Dialog with Real-time Transposer */}
