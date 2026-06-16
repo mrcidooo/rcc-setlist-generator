@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Trash2, Users, Sliders, KeyRound, Save } from "lucide-react";
+import { Music, Trash2, Users, Sliders, KeyRound, Save, CloudLightning, Cloud } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Singer = {
@@ -31,8 +31,10 @@ export default function SingerKeyPreferences() {
   const [singerKeyData, setSingerKeyData] = useState<
     Record<string, Record<string, string>>
   >({});
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "error">("synced");
 
   const { toast } = useToast();
+  const isInitialLoad = useRef(true);
 
   /** -----------------------------------------------------------------
    *  Helper – get (or create) a persistent anonymous UUID.
@@ -43,13 +45,30 @@ export default function SingerKeyPreferences() {
     const storageKey = "vocal_key_user";
     let id = localStorage.getItem(storageKey);
     if (!id) {
-      // `crypto.randomUUID()` is supported in modern browsers
       id = crypto.randomUUID();
       localStorage.setItem(storageKey, id);
     }
     return id;
   };
 
+  // Helper function to fetch just the key matrix
+  const fetchMatrix = async () => {
+    const { data: authUser } = await supabase.auth.getUser();
+    const userId = authUser?.user?.id ?? getAnonymousUserId();
+
+    const { data: matrixData, error: matrixError } = await supabase
+      .from("key_matrix")
+      .select("matrix")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (!matrixError && matrixData && matrixData.length > 0) {
+      setSingerKeyData(matrixData[0].matrix as Record<string, Record<string, string>>);
+    }
+  };
+
+  // Load initial data
   useEffect(() => {
     const loadSupabaseData = async () => {
       // Load singers
@@ -64,40 +83,96 @@ export default function SingerKeyPreferences() {
         .select("id, title");
       if (!songsError && songsData) setSongs(songsData);
 
-      // Load existing matrix (fallback to localStorage)
-      const anonId = getAnonymousUserId();
-
-      const { data: matrixData, error: matrixError } = await supabase
-        .from("key_matrix")
-        .select("matrix, user_id")
-        .eq("user_id", anonId)
-        .single();
-
-      if (!matrixError && matrixData?.matrix) {
-        setSingerKeyData(matrixData.matrix as Record<string, Record<string, string>>);
-      } else {
-        // No DB entry – try localStorage (legacy behaviour)
-        const stored = localStorage.getItem("vocal_key_matrix");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            const normalized: Record<string, Record<string, string>> = {};
-            Object.keys(parsed).forEach((songId) => {
-              normalized[songId] = {};
-              Object.keys(parsed[songId]).forEach((singerId) => {
-                normalized[songId][singerId] = String(parsed[songId][singerId] ?? "");
-              });
-            });
-            setSingerKeyData(normalized);
-          } catch (e) {
-            console.error("Error parsing stored matrix:", e);
-          }
-        }
-      }
+      // Load key matrix
+      await fetchMatrix();
+      isInitialLoad.current = false;
     };
 
     loadSupabaseData();
+
+    // Set up Realtime Subscriptions to keep everything updated in real-time
+    const singersChannel = supabase
+      .channel("realtime:singers")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "singers" },
+        async () => {
+          const { data } = await supabase.from("singers").select("id, name");
+          if (data) setSingers(data);
+        }
+      )
+      .subscribe();
+
+    const songsChannel = supabase
+      .channel("realtime:songs")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "songs" },
+        async () => {
+          const { data } = await supabase.from("songs").select("id, title");
+          if (data) setSongs(data);
+        }
+      )
+      .subscribe();
+
+    const matrixChannel = supabase
+      .channel("realtime:key_matrix")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "key_matrix" },
+        async () => {
+          await fetchMatrix();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(singersChannel);
+      supabase.removeChannel(songsChannel);
+      supabase.removeChannel(matrixChannel);
+    };
   }, []);
+
+  // Auto-save debounced sync with Supabase
+  useEffect(() => {
+    if (isInitialLoad.current) return;
+
+    setSyncStatus("syncing");
+    const saveTimeout = setTimeout(async () => {
+      try {
+        localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
+
+        const { data: authUser } = await supabase.auth.getUser();
+        const userId = authUser?.user?.id ?? getAnonymousUserId();
+
+        // 1️⃣ Delete any previous matrix for this user_id to avoid duplications
+        await supabase
+          .from("key_matrix")
+          .delete()
+          .eq("user_id", userId);
+
+        // 2️⃣ Insert the fresh matrix
+        const payload = {
+          user_id: userId,
+          matrix: singerKeyData,
+        };
+
+        const { error: insertError } = await supabase.from("key_matrix").insert(payload);
+
+        if (insertError) {
+          setSyncStatus("error");
+          console.error("Auto-save failed:", insertError.message);
+        } else {
+          setSyncStatus("synced");
+        }
+      } catch (err) {
+        setSyncStatus("error");
+        console.error("Error during auto-save:", err);
+      }
+    }, 800); // 800ms debounce
+
+    return () => clearTimeout(saveTimeout);
+  }, [singerKeyData]);
 
   const getKeyForSinger = (songId: string, singerId: string) => {
     return singerKeyData[songId]?.[singerId] ?? "";
@@ -108,51 +183,9 @@ export default function SingerKeyPreferences() {
       ...prev,
       [songId]: {
         ...(prev[songId] ?? {}),
-        [singerId]: value,
+        [singerId]: value.toUpperCase(), // automatically uppercase keys for consistency
       },
     }));
-  };
-
-  /** -----------------------------------------------------------------
-   *  Save matrix – works for both logged‑in users and anonymous users.
-   *  For anonymous users we use the generated UUID from `getAnonymousUserId()`.
-   *  ----------------------------------------------------------------- */
-  const handleSaveMatrix = async () => {
-    // Keep localStorage for legacy fallback
-    localStorage.setItem("vocal_key_matrix", JSON.stringify(singerKeyData));
-
-    // Determine which user_id to use
-    const { data: authUser } = await supabase.auth.getUser();
-    const userId = authUser?.user?.id ?? getAnonymousUserId();
-
-    // 1️⃣ Delete any previous matrix for this user_id
-    const { error: deleteError } = await supabase
-      .from("key_matrix")
-      .delete()
-      .eq("user_id", userId);
-
-    if (deleteError) {
-      toast({ title: "Matrix save failed", description: deleteError.message });
-      return;
-    }
-
-    // 2️⃣ Insert the fresh matrix
-    const payload = {
-      user_id: userId,
-      matrix: singerKeyData,
-    };
-
-    const { error: insertError } = await supabase.from("key_matrix").insert(payload);
-
-    if (insertError) {
-      toast({ title: "Matrix save failed", description: insertError.message });
-      return;
-    }
-
-    toast({
-      title: "Matrix Saved Successfully",
-      description: "Comfort key preferences have been stored for all team vocalists.",
-    });
   };
 
   const handleDeleteSinger = async (singer: Singer) => {
@@ -190,14 +223,38 @@ export default function SingerKeyPreferences() {
   return (
     <div className="space-y-6 px-4 py-6 max-w-4xl mx-auto pb-32">
       {/* Header */}
-      <div className="px-1 mb-2">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <KeyRound className="h-6 w-6 text-indigo-500 animate-pulse" />
-          Vocal Key Matrix
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Define and track key preferences for worship team singers to ensure stress‑free vocals.
-        </p>
+      <div className="px-1 mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <KeyRound className="h-6 w-6 text-indigo-500 animate-pulse" />
+            Vocal Key Matrix
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Define and track key preferences for worship team singers to ensure stress‑free vocals.
+          </p>
+        </div>
+
+        {/* Real-time Status Indicator */}
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-1.5 rounded-full text-xs">
+          {syncStatus === "synced" && (
+            <>
+              <Cloud className="h-4 w-4 text-emerald-500 animate-bounce" />
+              <span className="font-bold text-emerald-500">Real-time Saved</span>
+            </>
+          )}
+          {syncStatus === "syncing" && (
+            <>
+              <CloudLightning className="h-4 w-4 text-indigo-500 animate-spin" />
+              <span className="font-bold text-indigo-500">Saving to DB...</span>
+            </>
+          )}
+          {syncStatus === "error" && (
+            <>
+              <CloudLightning className="h-4 w-4 text-rose-500 animate-pulse" />
+              <span className="font-bold text-rose-500">Offline Fallback</span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Singers list */}
@@ -314,19 +371,10 @@ export default function SingerKeyPreferences() {
                 <div>
                   <CardTitle className="text-lg font-bold">Interactive Key Matrix</CardTitle>
                   <CardDescription>
-                    Manage comfort zones directly by changing values inline.
+                    Manage comfort zones directly by changing values inline. Saves instantly in real-time.
                   </CardDescription>
                 </div>
               </div>
-              {singers.length > 0 && songs.length > 0 && (
-                <Button
-                  onClick={handleSaveMatrix}
-                  className="h-10 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-5 flex items-center gap-1.5 self-start sm:self-auto"
-                >
-                  <Save className="h-4 w-4" />
-                  Save Matrix
-                </Button>
-              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
