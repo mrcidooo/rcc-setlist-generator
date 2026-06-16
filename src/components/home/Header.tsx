@@ -11,53 +11,32 @@ export const Header = () => {
   const isDark = resolvedTheme === "dark";
 
   const [buttonRipple, setButtonRipple] = useState(false);
-  const [reveal, setReveal] = useState(false);
-  const [revealTheme, setRevealTheme] = useState<"light" | "dark">("dark");
+  const [screenRipple, setScreenRipple] = useState(false);
 
-  const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // 1. Get exact location of button center
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-
-    // 2. Pass coordinates dynamically to CSS custom variables
-    document.documentElement.style.setProperty("--reveal-x", `${x}px`);
-    document.documentElement.style.setProperty("--reveal-y", `${y}px`);
-
-    // Set preview state for circular overlay
-    setRevealTheme(isDark ? "light" : "dark");
-    setReveal(true);
-    setButtonRipple(true);
-
-    // 3. Perform theme swap
+  const handleToggle = () => {
     setTheme(isDark ? "light" : "dark");
+    setButtonRipple(true);
+    setScreenRipple(true);
   };
 
   useEffect(() => {
     if (buttonRipple) {
-      const timer = setTimeout(() => setButtonRipple(false), 400);
+      const timer = setTimeout(() => setButtonRipple(false), 300);
       return () => clearTimeout(timer);
     }
   }, [buttonRipple]);
 
   useEffect(() => {
-    if (reveal) {
-      const timer = setTimeout(() => setReveal(false), 750);
+    if (screenRipple) {
+      const timer = setTimeout(() => setScreenRipple(false), 600);
       return () => clearTimeout(timer);
     }
-  }, [reveal]);
+  }, [screenRipple]);
 
   return (
     <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
-      {/* Absolute high-performance circular clip-path overlay */}
-      {reveal && (
-        <div 
-          className={`fixed inset-0 pointer-events-none z-50 overflow-hidden animate-circular-reveal ${
-            revealTheme === "dark" 
-              ? "bg-[#0B0E1B]" 
-              : "bg-[#FAFAFA]"
-          }`}
-        />
+      {screenRipple && (
+        <div className="fixed inset-0 pointer-events-none animate-ripple-screen bg-indigo-500/10 rounded-full" />
       )}
 
       <div className="flex items-center justify-between">
@@ -99,9 +78,12 @@ export const Header = () => {
             onClick={handleToggle}
             className="h-10 w-10 rounded-[18px] hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 relative overflow-hidden"
           >
-            {buttonRipple && (
-              <span className="absolute inset-0 rounded-full bg-primary/20 animate-ripple pointer-events-none" />
-            )}
+            <span
+              className={`
+                absolute inset-0 rounded-full bg-primary/20 
+                transform scale-0 
+                ${buttonRipple ? "animate-[ripple_0.3s_ease-out]" : ""}`}
+            />
             {isDark ? (
               <Sun className="h-4.5 w-4.5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
             ) : (
