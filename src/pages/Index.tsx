@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/home/Header";
 import { DashboardStats } from "@/components/home/DashboardStats";
 import { TeamMembers } from "@/components/home/TeamMembers";
-import { UserPlus, Library, FileText, Download, Share, Plus, X } from "lucide-react";
+import { UserPlus, Library, FileText, Download, Share, Plus, X, Share as ShareIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import WelcomeSplash from "@/components/WelcomeSplash";
 
 type VoiceType = "male" | "female";
 
@@ -37,6 +38,9 @@ export default function Index() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const { toast } = useToast();
+
+  // Control splash visibility
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -84,27 +88,34 @@ export default function Index() {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
-        toast({ title: "App installed!", description: "Enjoy using Worship Setlist Generator offline." });
+        toast({
+          title: "App installed!",
+          description: "Enjoy using Worship Setlist Generator offline.",
+        });
       }
       setDeferredPrompt(null);
     } else {
-      // Native one-click is not available (e.g. iOS Safari, or already installed). Show the custom step-by-step visual helper!
+      // Native one‑click is not available (e.g. iOS Safari, or already installed). Show the custom step‑by‑step visual helper!
       setIsInstallGuideOpen(true);
     }
   };
 
+  // Hide splash once the page is ready
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-transparent pb-32 flex flex-col px-4 sm:px-6 md:px-8 max-w-2xl mx-auto">
-      {/* Premium Header */}
-      <Header />
+      {/* Show premium splash while loading */}
+      {showSplash && <WelcomeSplash />}
 
-      <div className="flex-1 space-y-6">
-        {/* Dynamic Neumorphic Stats */}
-        <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
+      {/* Dynamic Neumorphic Stats */}
+      <DashboardStats totalSongs={totalSongs} totalSingers={singers.length} />
 
-        {/* Team profiles */}
-        <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
-      </div>
+      {/* Team profiles */}
+      <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
 
       {/* Install to Device Button (Always Visible) */}
       <div className="mt-8 flex justify-center">
@@ -117,9 +128,9 @@ export default function Index() {
         </Button>
       </div>
 
-      {/* Elegant, step-by-step install guide dialog */}
+      {/* Elegant, step‑by‑step install guide dialog */}
       <Dialog open={isInstallGuideOpen} onOpenChange={setIsInstallGuideOpen}>
-        <DialogContent className="max-w-md rounded-[32px] border-0 bg-white/95 dark:bg-card/95 shadow-2xl p-6 backdrop-blur-3xl">
+        <DialogContent className="max-w-md rounded-[32px] border-0 bg-white/95 dark:bg-card/95 shadow-2xl p-6 backdrop-blur-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="flex flex-row items-start justify-between pb-4 border-b border-black/5 dark:border-white/5">
             <div className="space-y-1">
               <DialogTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
@@ -150,11 +161,9 @@ export default function Index() {
               <ol className="text-xs space-y-2 text-foreground/85 list-decimal pl-4.5">
                 <li>Open this page in the <strong className="font-extrabold text-foreground">Safari Browser</strong>.</li>
                 <li>
-                  Tap the <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><Share className="h-3 w-3 inline" /> Share</span> button at the bottom of the screen.
-                </li>
+                  Tap the <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><ShareIcon className="h-3 w-3 inline" /> Share</span> button at the bottom of the screen.</li>
                 <li>
-                  Scroll down the share sheet and tap <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><Plus className="h-3 w-3 inline" /> Add to Home Screen</span>.
-                </li>
+                  Scroll down the share sheet and tap <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><Plus className="h-3 w-3 inline" /> Add to Home Screen</span>.</li>
               </ol>
             </div>
 
@@ -164,10 +173,9 @@ export default function Index() {
                 Android / Google Chrome
               </div>
               <ol className="text-xs space-y-2 text-foreground/85 list-decimal pl-4.5">
-                <li>Tap the three vertical dots (menu icon) on Chrome's top-right corner.</li>
+                <li>Tap the three vertical dots (menu icon) on Chrome's top‑right corner.</li>
                 <li>
-                  Select <strong className="font-bold text-foreground">Add to Home screen</strong> or <strong className="font-bold text-foreground">Install App</strong>.
-                </li>
+                  Select <strong className="font-bold text-foreground">Add to Home screen</strong> or <strong className="font-bold text-foreground">Install App</strong>.</li>
               </ol>
             </div>
           </div>
