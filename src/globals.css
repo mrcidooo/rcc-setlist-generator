@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import the dark‑mode transition styles */
+/* Import the dark-mode transition styles */
 @import "./styles/darkTransition.css";
 
 /* Global transitions and premium effects */
@@ -20,223 +20,45 @@ button:active,
   transform: scale(0.96);
 }
 
-/* Premium Light Mode Button Enhancements for Visual Separation */
-button:not([disabled]),
-[role="button"]:not([disabled]) {
-  /* Subtle elevation for all buttons in light mode */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+/* Enhanced dark/light mode transition styles */
+.dark, .light {
+  transition: all 0.5s ease-in-out;
 }
 
-.dark button:not([disabled]),
-.dark [role="button"]:not([disabled]) {
-  box-shadow: none;
-}
-
-/* Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(161, 148, 197, 0.2);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(161, 148, 197, 0.4);
-}
-
-/* Color Variables for Neumorphic Futuristic theme */
-@layer base {
-  :root {
-    /* Off-white / Soft Lavender theme */
-    --background: 250 30% 97%;
-    --foreground: 240 25% 10%;
-
-    --card: 250 24% 100%;
-    --card-foreground: 240 25% 10%;
-
-    --popover: 250 24% 100%;
-    --popover-foreground: 240 25% 10%;
-
-    --primary: 262 80% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 250 20% 92%;
-    --secondary-foreground: 240 25% 10%;
-
-    --muted: 250 15% 90%;
-    --muted-foreground: 240 10% 40%;
-
-    --accent: 262 70% 95%;
-    --accent-foreground: 262 80% 40%;
-
-    --destructive: 346 84% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 250 15% 88%;
-    --input: 250 15% 92%;
-    --ring: 262 80% 50%;
-
-    --radius: 1.5rem; /* 24px default rounded corners */
-  }
-
-  .dark {
-    /* Midnight Purple / Deep Navy theme */
-    --background: 233 45% 7%;      /* Deep midnight blue #0B0E1B */
-    --foreground: 250 30% 95%;     /* Off-white text */
-
-    --card: 250 35% 11%;           /* Midnight Purple Card #131124 */
-    --card-foreground: 250 30% 95%;
-
-    --popover: 250 35% 9%;
-    --popover-foreground: 250 30% 95%;
-
-    --primary: 250 95% 65%;        /* Glowing Indigo #6366F1 */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 250 30% 15%;
-    --secondary-foreground: 250 30% 95%;
-
-    --muted: 250 25% 18%;
-    --muted-foreground: 240 15% 70%;
-
-    --accent: 255 70% 25%;         /* Lavender highlight container */
-    --accent-foreground: 250 95% 85%;
-
-    --destructive: 346 84% 45%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 250 30% 16%;
-    --input: 250 30% 14%;
-    --ring: 250 95% 65%;
-  }
-}
-
-/* Kick animation – a quick upward bounce */
-@keyframes kick {
-  0%   { transform: translateY(0); }
-  30%  { transform: translateY(-6px); }
-  60%  { transform: translateY(0); }
-  100% { transform: translateY(0); }
-}
-
-/* Full‑screen ripple animation for dark‑mode toggle */
-@keyframes ripple-screen {
+/* Circular reveal animation for dark mode toggle */
+@keyframes circular-reveal {
   0% {
-    transform: scale(0);
-    opacity: 0.4;
-  }
-  80% {
-    transform: scale(3);
+    transform: scale(0.1);
     opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
   }
   100% {
-    transform: scale(3);
-    opacity: 0;
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-/* Utility classes */
-.animate-kick {
-  animation: kick 0.4s ease-out;
-}
-.animate-ripple {
-  animation: ripple 0.3s ease-out;
+/* Apply circular reveal to dark mode toggle button */
+.dark-mode-toggle {
+  animation: circular-reveal 0.6s ease-in-out forwards;
 }
 
-/* Apply the screen ripple animation via a utility class */
-.ripple-screen {
-  animation: ripple-screen 0.6s ease-out forwards;
+/* Smoother color transitions for theme changes */
+body {
+  transition: background-color 0.5s ease, color 0.3s ease;
 }
 
-/* Utilities */
+/* Additional theme-specific transitions */
+.dark-mode-toggle {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility classes for theme transitions */
 @layer utilities {
-  /* Spatial UI Glassmorphism & Soft Neumorphism */
-  .neumorphic-inset {
-    @apply shadow-[inset_1px_1px_3px_rgba(255,255,255,0.05),inset_-1px_-1px_3px_rgba(0,0,0,0.3)];
-  }
-
-  /* Premium Glowing Shadows */
-  .glow-primary {
-    @apply shadow-[0_0_20px_rgba(99,102,241,0.35)] dark:shadow-[0_0_25px_rgba(139,92,246,0.45)];
-  }
-
-  .glow-green {
-    @apply shadow-[0_0_20px_rgba(16,185,129,0.3)] dark:shadow-[0_0_25px_rgba(52,211,153,0.35)];
-  }
-
-  .glow-purple {
-    @apply shadow-[0_0_20px_rgba(139,92,246,0.3)] dark:shadow-[0_0_25px_rgba(167,139,250,0.35)];
-  }
-
-  /* Glassmorphic Spatial Panel styling (Apple Vision Pro-like) */
-  .glass-panel {
-    @apply backdrop-blur-xl bg-white/70 dark:bg-card/40 border border-white/20 dark:border-white/5 shadow-2xl;
-  }
-
-  .glass-input {
-    @apply bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary backdrop-blur-md;
-  }
-
-  /* Soft Neumorphic floating cards */
-  .neu-card {
-    @apply rounded-[28px] border border-white/20 dark:border-white/5 transition-all duration-300;
-    box-shadow: 
-      8px 8px 24px -6px rgba(0, 0, 0, 0.08), 
-      -8px -8px 24px -6px rgba(255, 255, 255, 0.4);
-  }
-
-  .dark .neu-card {
-    box-shadow: 
-      12px 12px 32px rgba(0, 0, 0, 0.5), 
-      -4px -4px 16px rgba(255, 255, 255, 0.02),
-      inset 1px 1px 1px rgba(255, 255, 255, 0.05);
-  }
-
-  .neu-btn {
-    @apply rounded-[22px] transition-all duration-300 active:scale-95;
-    box-shadow: 
-      0 4px 14px -3px rgba(99, 102, 241, 0.15),
-      8px 8px 24px -6px rgba(0, 0, 0, 0.06), 
-      -8px -8px 24px -6px rgba(255, 255, 255, 0.8);
-    background: linear-gradient(135deg, #ffffff 0%, #f9f8fc 100%);
-  }
-
-  .dark .neu-btn {
-    background: transparent;
-    box-shadow: 
-      6px 6px 16px rgba(0, 0, 0, 0.4), 
-      -2px -2px 10px rgba(255, 255, 255, 0.03);
-  }
-
-  .neu-btn-active {
-    @apply rounded-[22px];
-    box-shadow: 
-      inset 2px 2px 5px rgba(0, 0, 0, 0.1), 
-      inset -2px -2px 5px rgba(255, 255, 255, 0.6);
-  }
-
-  .dark .neu-btn-active {
-    box-shadow: 
-      inset 3px 3px 8px rgba(0, 0, 0, 0.6), 
-      inset -1px -1px 4px rgba(255, 255, 255, 0.05);
-  }
-}
-
-/* Base styles configuration */
-@layer base {
-  body {
-    @apply bg-background text-foreground overflow-x-hidden select-none;
-    background-image: 
-      radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
-  }
-
-  /* Force rounded elements */
-  input, select, textarea {
-    @apply rounded-2xl;
+  .theme-transition {
+    transition: all 0.5s ease-in-out;
   }
 }
