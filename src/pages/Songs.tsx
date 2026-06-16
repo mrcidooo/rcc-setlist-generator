@@ -25,6 +25,7 @@ import { Music, Plus, Search, Sparkles, Play, Edit2, Trash2, Eye } from "lucide-
 import { type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
+import SongDetailsDialog from "@/components/SongDetailsDialog";
 
 const mapSong = (record: any): Song => ({
   id: record.id,
@@ -221,6 +222,10 @@ export default function Songs() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  // Floating Details Dialog state
+  const [detailsSong, setDetailsSong] = useState<Song | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   const handlePreview = (e: React.MouseEvent, song: Song) => {
     e.stopPropagation(); // prevent clicking row Detail redirection
     setPreviewSong(song);
@@ -232,9 +237,15 @@ export default function Songs() {
     setPreviewSong(null);
   };
 
-  const handleRowClick = (songId: string) => {
-    // Open in a new tab elegantly
-    window.open(`/songs/${songId}`, "_blank");
+  const handleRowClick = (song: Song) => {
+    // Intercept with beautiful floating popup modal containing details & transposer
+    setDetailsSong(song);
+    setIsDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setIsDetailsOpen(false);
+    setDetailsSong(null);
   };
 
   return (
@@ -429,7 +440,7 @@ export default function Songs() {
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">Worship Playlists</CardTitle>
           <CardDescription>
-            Click any track row to open full live performance views and real‑time transpose controls in a new tab.
+            Click any track row to open full live performance views and real‑time transpose controls in an elegant overlay.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -480,7 +491,7 @@ export default function Songs() {
                 return (
                   <div
                     key={song.id}
-                    onClick={() => handleRowClick(song.id)}
+                    onClick={() => handleRowClick(song)}
                     className="group flex items-center justify-between p-3.5 hover:bg-indigo-500/5 cursor-pointer transition-colors duration-300"
                   >
                     <div className="flex items-center gap-4 min-w-0">
@@ -557,8 +568,11 @@ export default function Songs() {
         </CardContent>
       </Card>
 
-      {/* Preview Dialog */}
+      {/* Simple Lyric Preview Dialog */}
       <SongPreviewDialog song={previewSong} open={isPreviewOpen} onClose={closePreview} />
+
+      {/* Floating Interactive Details Dialog with Real-time Transposer */}
+      <SongDetailsDialog song={detailsSong} open={isDetailsOpen} onClose={closeDetails} />
     </div>
   );
 }
