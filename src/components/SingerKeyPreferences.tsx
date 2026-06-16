@@ -183,7 +183,7 @@ export default function SingerKeyPreferences() {
       ...prev,
       [songId]: {
         ...(prev[songId] ?? {}),
-        [singerId]: value.toUpperCase(), // automatically uppercase keys for consistency
+        [singerId]: value, // preserve exact case as typed
       },
     }));
   };
