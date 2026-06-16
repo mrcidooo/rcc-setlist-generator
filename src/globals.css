@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import the dark‑mode transition styles */
+@import "./styles/darkTransition.css";
+
 /* Global transitions and premium effects */
 button,
 [role="button"],
@@ -46,74 +49,73 @@ button:not([disabled]),
 }
 
 /* Color Variables for Neumorphic Futuristic theme */
-:root {
-  /* Off-white / Soft Lavender theme */
-  --background: 250 30% 97%;
-  --foreground: 240 25% 10%;
+@layer base {
+  :root {
+    /* Off-white / Soft Lavender theme */
+    --background: 250 30% 97%;
+    --foreground: 240 25% 10%;
 
-  --card: 250 24% 100%;
-  --card-foreground: 240 25% 10%;
+    --card: 250 24% 100%;
+    --card-foreground: 240 25% 10%;
 
-  --popover: 250 24% 100%;
-  --popover-foreground: 240 25% 10%;
+    --popover: 250 24% 100%;
+    --popover-foreground: 240 25% 10%;
 
-  --primary: 262 80% 50%;
-  --primary-foreground: 0 0% 100%;
+    --primary: 262 80% 50%;
+    --primary-foreground: 0 0% 100%;
 
-  --secondary: 250 20% 92%;
-  --secondary-foreground: 240 25% 10%;
+    --secondary: 250 20% 92%;
+    --secondary-foreground: 240 25% 10%;
 
-  --muted: 250 15% 90%;
-  --muted-foreground: 240 10% 40%;
+    --muted: 250 15% 90%;
+    --muted-foreground: 240 10% 40%;
 
-  --accent: 262 70% 95%;
-  --accent-foreground: 262 80% 40%;
+    --accent: 262 70% 95%;
+    --accent-foreground: 262 80% 40%;
 
-  --destructive: 346 84% 50%;
-  --destructive-foreground: 0 0% 100%;
+    --destructive: 346 84% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-  --border: 250 15% 88%;
-  --input: 250 15% 92%;
-  --ring: 262 80% 50%;
+    --border: 250 15% 88%;
+    --input: 250 15% 92%;
+    --ring: 262 80% 50%;
 
-  --radius: 1.5rem; /* 24px default rounded corners */
-  
-  --reveal-x: 50%;
-  --reveal-y: 50%;
+    --radius: 1.5rem; /* 24px default rounded corners */
+  }
+
+  .dark {
+    /* Midnight Purple / Deep Navy theme */
+    --background: 233 45% 7%;      /* Deep midnight blue #0B0E1B */
+    --foreground: 250 30% 95%;     /* Off-white text */
+
+    --card: 250 35% 11%;           /* Midnight Purple Card #131124 */
+    --card-foreground: 250 30% 95%;
+
+    --popover: 250 35% 9%;
+    --popover-foreground: 250 30% 95%;
+
+    --primary: 250 95% 65%;        /* Glowing Indigo #6366F1 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 250 30% 15%;
+    --secondary-foreground: 250 30% 95%;
+
+    --muted: 250 25% 18%;
+    --muted-foreground: 240 15% 70%;
+
+    --accent: 255 70% 25%;         /* Lavender highlight container */
+    --accent-foreground: 250 95% 85%;
+
+    --destructive: 346 84% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 250 30% 16%;
+    --input: 250 30% 14%;
+    --ring: 250 95% 65%;
+  }
 }
 
-.dark {
-  /* Midnight Purple / Deep Navy theme */
-  --background: 233 45% 7%;      /* Deep midnight blue #0B0E1B */
-  --foreground: 250 30% 95%;     /* Off-white text */
-
-  --card: 250 35% 11%;           /* Midnight Purple Card #131124 */
-  --card-foreground: 250 30% 95%;
-
-  --popover: 250 35% 9%;
-  --popover-foreground: 250 30% 95%;
-
-  --primary: 250 95% 65%;        /* Glowing Indigo #6366F1 */
-  --primary-foreground: 0 0% 100%;
-
-  --secondary: 250 30% 15%;
-  --secondary-foreground: 250 30% 95%;
-
-  --muted: 250 25% 18%;
-  --muted-foreground: 240 15% 70%;
-
-  --accent: 255 70% 25%;         /* Lavender highlight container */
-  --accent-foreground: 250 95% 85%;
-
-  --destructive: 346 84% 45%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 250 30% 16%;
-  --input: 250 30% 14%;
-  --ring: 250 95% 65%;
-}
-
-/* Animations */
+/* Kick animation – a quick upward bounce */
 @keyframes kick {
   0%   { transform: translateY(0); }
   30%  { transform: translateY(-6px); }
@@ -121,42 +123,33 @@ button:not([disabled]),
   100% { transform: translateY(0); }
 }
 
-@keyframes ripple {
+/* Full‑screen ripple animation for dark‑mode toggle */
+@keyframes ripple-screen {
   0% {
     transform: scale(0);
-    opacity: 0.5;
+    opacity: 0.4;
   }
-  100% {
-    transform: scale(2.5);
+  80% {
+    transform: scale(3);
     opacity: 0;
   }
-}
-
-@keyframes circular-reveal {
-  0% {
-    clip-path: circle(0% at var(--reveal-x) var(--reveal-y));
-  }
   100% {
-    clip-path: circle(150% at var(--reveal-x) var(--reveal-y));
+    transform: scale(3);
+    opacity: 0;
   }
-}
-
-/* Transition for document elements to feel extra smooth */
-html, body {
-  transition: background-color 0.5s ease-in-out, border-color 0.5s ease-in-out;
 }
 
 /* Utility classes */
 .animate-kick {
   animation: kick 0.4s ease-out;
 }
-
 .animate-ripple {
-  animation: ripple 0.4s ease-out forwards;
+  animation: ripple 0.3s ease-out;
 }
 
-.animate-circular-reveal {
-  animation: circular-reveal 0.75s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+/* Apply the screen ripple animation via a utility class */
+.ripple-screen {
+  animation: ripple-screen 0.6s ease-out forwards;
 }
 
 /* Utilities */
@@ -234,14 +227,16 @@ html, body {
 }
 
 /* Base styles configuration */
-body {
-  @apply bg-background text-foreground overflow-x-hidden select-none;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
-}
+@layer base {
+  body {
+    @apply bg-background text-foreground overflow-x-hidden select-none;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+  }
 
-/* Force rounded elements */
-input, select, textarea {
-  @apply rounded-2xl;
+  /* Force rounded elements */
+  input, select, textarea {
+    @apply rounded-2xl;
+  }
 }
