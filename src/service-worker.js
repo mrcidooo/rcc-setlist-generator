@@ -1,1 +1,21 @@
-"self.addEventListener('install', event => { event.waitUntil(caches.open('rcc-setlist-cache').then(cache => { return cache.addAll(['/', '/index.html', '/src/main.tsx', '/src/App.tsx', '/src/components/home/Header.tsx', '/src/components/ui/Button.tsx', '/src/components/ui/Toaster.tsx', '/src/components/ui/sonner.tsx', '/src/index.html']); })); }); self.addEventListener('fetch', event => { event.respondWith( fetch(event.request).catch(() => caches.match(event.request)) ); });"
+const CACHE_NAME = 'worship-setlist-cache-v1';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/logo.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .catch(() => caches.match(event.request))
+  );
+});
