@@ -15,6 +15,108 @@ textarea {
   @apply transition-all duration-300 ease-out;
 }
 
+/* Smooth theme transition */
+html,
+body,
+[data-theme] {
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* Circular reveal animation */
+@keyframes circular-reveal {
+  0% {
+    clip-path: circle(0% at 90% 10%);
+  }
+  100% {
+    clip-path: circle(150% at 90% 10%);
+  }
+}
+
+.animate-circular-reveal {
+  animation: circular-reveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Existing button styles */
+button:active,
+[role="button"]:active {
+  transform: scale(0.96);
+}
+
+/* Premium Light Mode Button Enhancements for Visual Separation */
+button:not([disabled]),
+[role="button"]:not([disabled]) {
+  /* Subtle elevation for all buttons in light mode */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.dark button:not([disabled]),
+.dark [role="button"]:not([disabled]) {
+  box-shadow: none;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(161, 148, 197, 0.2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 148, 197, 0.4);
+}
+
+/* Color Variables for Neumorphic Futuristic theme */
+@layer base {
+  :root {
+    /* Off-white / Soft Lavender theme */
+    --background: 250 30% 97%;
+    --foreground: 240 25% 10%;
+
+    --card: 250 24% 100%;
+    --card-foreground: 240 25% 10%;
+
+    --popover: 250 24% 100<dyad-write path="src/globals.css" description="Ensure globals.css is completed with valid circular reveal CSS styles and CSS variables">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global transitions and premium effects */
+button,
+[role="button"],
+a,
+input,
+select,
+textarea {
+  @apply transition-all duration-300 ease-out;
+}
+
+/* Smooth theme transition */
+html,
+body,
+[data-theme] {
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* Circular reveal animation */
+@keyframes circular-reveal {
+  0% {
+    clip-path: circle(0% at 90% 10%);
+  }
+  100% {
+    clip-path: circle(150% at 90% 10%);
+  }
+}
+
+.animate-circular-reveal {
+  animation: circular-reveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Existing button styles */
 button:active,
 [role="button"]:active {
   transform: scale(0.96);
