@@ -14,11 +14,68 @@ import { supabase } from "@/lib/supabaseClient";
 import { generateSetlistPDF } from "@/utils/pdfGenerator";
 import { generateSetlistDOCX } from "@/utils/docxGenerator";
 
+const SETLIST_DRAFT_STORAGE_KEY = "rcc_setlist_builder_draft";
+
+const getStoredSetlist = (): Setlist | null => {
+  if (typeof window === "undefined") return null;
+
+  const stored = window.localStorage.getItem(SETLIST_DRAFT_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as Setlist;
+
+    if (!parsed || typeof parsed !== "object") return null;
+
+    return {
+      id: parsed.id || initialSetlist.id,
+      name: parsed.name || "",
+      date: parsed.date || "",
+      serviceType: parsed.serviceType || "Sunday Worship",
+      songs: Array.isArray(parsed.songs) ? parsed.songs : [],
+    };
+  } catch {
+    return null;
+  }
+};
+
 export function useSetlistBuilder() {
-  const [setlist, setSetlist] = useState<Setlist>(initialSetlist);
+  const [setlist, setSetlist] = useState<Setlist>(() => {
+    return getStoredSetlist() || initialSetlist;
+  });
   const [formData, setFormData] = useState<SetlistFormData>(emptySetlistSongForm);
   const [isAddingSong, setIsAddingSong] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    window.localStorage.setItem(SETLIST_DRAFT_STORAGE_KEY, JSON.stringify(setlist));
+  }, [setlist]);
+
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key !== SETLIST_DRAFT_STORAGE_KEY || !event.newValue) return;
+
+      try {
+        const parsed = JSON.parse(event.newValue) as Setlist;
+
+        setSetlist({
+          id: parsed.id || initialSetlist.id,
+          name: parsed.name || "",
+          date: parsed.date || "",
+          serviceType: parsed.serviceType || "Sunday Worship",
+          songs: Array.isArray(parsed.songs) ? parsed.songs : [],
+        });
+      } catch {
+        return;
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   // -----------------------------------------------------------------
   // Load the most recent setlist (or keep the empty starter)
