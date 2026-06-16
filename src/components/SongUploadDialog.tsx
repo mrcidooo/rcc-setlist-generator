@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { X, Music, Sparkles, Tags, FileText, Link } from "lucide-react";
+import { X, Music, Tags, FileText, Link } from "lucide-react";
 
 type SongForm = {
   title: string;
@@ -40,30 +40,14 @@ export default function SongUploadDialog({
   isEditing = false,
 }: SongUploadDialogProps) {
   const [form, setForm] = useState<SongForm>({
-    title: "",
-    artist: "",
-    originalKey: "",
-    tempo: "",
-    notes: "",
-    lyrics: "",
-    youtubeLink: "",
-    ...initialData,
+    title: initialData.title || "",
+    artist: initialData.artist || "",
+    originalKey: initialData.originalKey || "",
+    tempo: initialData.tempo || "",
+    notes: initialData.notes || "",
+    lyrics: initialData.lyrics || "",
+    youtubeLink: initialData.youtubeLink || "",
   });
-
-  // Reset form when dialog opens/closes or initialData changes
-  useEffect(() => {
-    if (open) {
-      setForm({
-        title: initialData.title || "",
-        artist: initialData.artist || "",
-        originalKey: initialData.originalKey || "",
-        tempo: initialData.tempo || "",
-        notes: initialData.notes || "",
-        lyrics: initialData.lyrics || "",
-        youtubeLink: initialData.youtubeLink || "",
-      });
-    }
-  }, [open, initialData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -92,6 +76,7 @@ export default function SongUploadDialog({
             </DialogDescription>
           </div>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={() => onOpenChange(false)}
@@ -104,7 +89,6 @@ export default function SongUploadDialog({
 
         <form onSubmit={handleSubmit} className="space-y-5 mt-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Song Title */}
             <div className="space-y-1.5">
               <Label htmlFor="song-title" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Song Title *
@@ -120,7 +104,6 @@ export default function SongUploadDialog({
               />
             </div>
 
-            {/* Artist */}
             <div className="space-y-1.5">
               <Label htmlFor="song-artist" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Artist
@@ -135,7 +118,6 @@ export default function SongUploadDialog({
               />
             </div>
 
-            {/* Original Key */}
             <div className="space-y-1.5">
               <Label htmlFor="song-key" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Original Key *
@@ -151,7 +133,6 @@ export default function SongUploadDialog({
               />
             </div>
 
-            {/* Tempo */}
             <div className="space-y-1.5">
               <Label htmlFor="song-tempo" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Tempo
@@ -167,7 +148,6 @@ export default function SongUploadDialog({
             </div>
           </div>
 
-          {/* Performance Notes */}
           <div className="space-y-1.5">
             <Label htmlFor="song-notes" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Tags className="h-3.5 w-3.5 text-indigo-500" />
@@ -184,7 +164,6 @@ export default function SongUploadDialog({
             />
           </div>
 
-          {/* YouTube Link */}
           <div className="space-y-1.5">
             <Label htmlFor="song-youtube" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Link className="h-3.5 w-3.5 text-indigo-500" />
@@ -200,7 +179,6 @@ export default function SongUploadDialog({
             />
           </div>
 
-          {/* Lyrics & Chord Matrix */}
           <div className="space-y-1.5">
             <Label htmlFor="song-lyrics" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <FileText className="h-3.5 w-3.5 text-indigo-500" />

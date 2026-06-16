@@ -55,6 +55,25 @@ export default function Songs() {
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const { toast } = useToast();
 
+  const uploadInitialData = useMemo<Partial<SongForm> | undefined>(() => {
+    if (!editingSong) return undefined;
+
+    return {
+      title: editingSong.title,
+      artist: "",
+      originalKey: editingSong.originalKey,
+      tempo: editingSong.tempo ?? "",
+      notes: editingSong.notes ?? "",
+      lyrics: editingSong.lyrics ?? "",
+      youtubeLink: "",
+    };
+  }, [editingSong]);
+
+  const closeUploadDialog = () => {
+    setIsDialogOpen(false);
+    setEditingSong(null);
+  };
+
   const fetchSongs = async () => {
     const { data, error } = await supabase.from("songs").select("*");
     if (error) {
@@ -96,11 +115,6 @@ export default function Songs() {
       return matchesSearch && matchesKey;
     });
   }, [songs, searchTerm, selectedKey]);
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setEditingSong(null);
-  };
 
   const handleUploadSubmit = async (data: SongForm) => {
     if (!data.title.trim() || !data.originalKey.trim()) {
@@ -158,7 +172,7 @@ export default function Songs() {
       toast({ title: "Song added", description: `${payload.title} added.` });
     }
 
-    handleDialogClose();
+    closeUploadDialog();
   };
 
   const handleDeleteSong = (e: React.MouseEvent, songId: string) => {
@@ -199,12 +213,10 @@ export default function Songs() {
   };
 
   const handleRowClick = (song: Song) => {
-    // Open details dialog instead of new tab
     setDetailsSong(song);
     setIsDetailsOpen(true);
   };
 
-  // Floating Details Dialog state
   const [detailsSong, setDetailsSong] = useState<Song | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -239,28 +251,20 @@ export default function Songs() {
         </Button>
       </header>
 
-      {/* Upload/Edit Dialog */}
       <SongUploadDialog
+        key={editingSong?.id ?? "new-song"}
         open={isDialogOpen}
-        onOpenChange={handleDialogClose}
+        onOpenChange={(openState) => {
+          setIsDialogOpen(openState);
+          if (!openState) {
+            setEditingSong(null);
+          }
+        }}
         onSubmit={handleUploadSubmit}
-        initialData={
-          editingSong
-            ? {
-                title: editingSong.title,
-                artist: "",
-                originalKey: editingSong.originalKey,
-                tempo: editingSong.tempo ?? "",
-                notes: editingSong.notes ?? "",
-                lyrics: editingSong.lyrics ?? "",
-                youtubeLink: "",
-              }
-            : undefined
-        }
+        initialData={uploadInitialData}
         isEditing={!!editingSong}
       />
 
-      {/* MP3 Player Style Tracklist Frame */}
       <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">Worship Playlists</CardTitle>
@@ -309,7 +313,6 @@ export default function Songs() {
               </p>
             </div>
           ) : (
-            /* MP3 Player List */
             <div className="rounded-[24px] border border-black/5 dark:border-white/5 overflow-hidden divide-y divide-black/5 dark:divide-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
               {filteredSongs.map((song, index) => {
                 const tagsArray = Array.isArray(song.tags) ? song.tags : [];
@@ -320,13 +323,11 @@ export default function Songs() {
                     className="group flex items-center justify-between p-3.5 hover:bg-indigo-500/5 cursor-pointer transition-colors duration-300"
                   >
                     <div className="flex items-center gap-4 min-w-0">
-                      {/* Play/Index indicator */}
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] bg-black/5 dark:bg-white/5 text-muted-foreground group-hover:bg-indigo-500 group-hover:text-white transition-all">
                         <span className="text-xs font-bold group-hover:hidden">{index + 1}</span>
                         <Play className="h-3.5 w-3.5 hidden group-hover:block" />
                       </div>
 
-                      {/* Song Title & Tags */}
                       <div className="min-w-0">
                         <div className="font-bold text-foreground text-sm tracking-tight truncate group-hover:text-indigo-500 transition-colors">
                           {song.title}
@@ -349,17 +350,15 @@ export default function Songs() {
                       </div>
                     </div>
 
-                    {/* Meta stats & Quick Action buttons */}
                     <div className="flex items-center gap-6">
-                      {/* Original Key Indicator */}
                       <div className="text-right">
                         <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Key</div>
                         <div className="font-black text-indigo-500 dark:text-indigo-400 text-sm">{song.originalKey || "C"}</div>
                       </div>
 
-                      {/* Audio Controls row */}
                       <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-[14px]">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           onClick={(e) => handlePreview(e, song)}
@@ -368,6 +367,7 @@ export default function Songs() {
                           <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           onClick={(e) => handleEditSong(e, song)}
@@ -376,6 +376,7 @@ export default function Songs() {
                           <Edit2 className="h-3.5 w-3.5 text-indigo-400 hover:text-indigo-500" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           onClick={(e) => handleDeleteSong(e, song.id)}
@@ -393,10 +394,8 @@ export default function Songs() {
         </CardContent>
       </Card>
 
-      {/* Preview Dialog */}
       <SongPreviewDialog song={previewSong} open={isPreviewOpen} onClose={closePreview} />
 
-      {/* Floating Interactive Details Dialog with Real-time Transposer */}
       <SongDetailsDialog song={detailsSong} open={isDetailsOpen} onClose={closeDetails} />
     </div>
   );
