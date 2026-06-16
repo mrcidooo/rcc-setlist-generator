@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Sparkles } from "lucide-react";
-import { SongCard, type Song } from "@/components/SongCard";
+import { Music, Plus, Search, Sparkles, Play, Edit2, Trash2, Eye } from "lucide-react";
+import { type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
 
@@ -181,23 +181,25 @@ export default function Songs() {
     setEditingSong(null);
   };
 
-  const handleDeleteSong = async (songId: string) => {
+  const handleDeleteSong = (e: React.MouseEvent, songId: string) => {
+    e.stopPropagation(); // prevent clicking row Detail redirection
     const confirmed = window.confirm(
       "Are you sure you want to delete this song? This action cannot be undone.",
     );
     if (!confirmed) return;
 
-    const { error } = await supabase.from("songs").delete().eq("id", songId);
-    if (error) {
-      toast({ title: "Delete failed", description: error.message });
-      return;
-    }
-
-    setSongs((cur) => cur.filter((s) => s.id !== songId));
-    toast({ title: "Song deleted", description: "Song removed from library." });
+    supabase.from("songs").delete().eq("id", songId).then(({ error }) => {
+      if (error) {
+        toast({ title: "Delete failed", description: error.message });
+        return;
+      }
+      setSongs((cur) => cur.filter((s) => s.id !== songId));
+      toast({ title: "Song deleted", description: "Song removed from library." });
+    });
   };
 
-  const handleEditSong = (song: Song) => {
+  const handleEditSong = (e: React.MouseEvent, song: Song) => {
+    e.stopPropagation(); // prevent clicking row Detail redirection
     setEditingSong(song);
     const tagsArray = Array.isArray(song.tags) ? song.tags : [];
     setForm({
@@ -219,7 +221,8 @@ export default function Songs() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const handlePreview = (song: Song) => {
+  const handlePreview = (e: React.MouseEvent, song: Song) => {
+    e.stopPropagation(); // prevent clicking row Detail redirection
     setPreviewSong(song);
     setIsPreviewOpen(true);
   };
@@ -227,6 +230,11 @@ export default function Songs() {
   const closePreview = () => {
     setIsPreviewOpen(false);
     setPreviewSong(null);
+  };
+
+  const handleRowClick = (songId: string) => {
+    // Open in a new tab elegantly
+    window.open(`/songs/${songId}`, "_blank");
   };
 
   return (
@@ -242,7 +250,7 @@ export default function Songs() {
             </h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Search songs, edit chord profiles, and update performance indices.
+            View tracks, transpose live chords, and manage your church's repertoire list.
           </p>
         </div>
 
@@ -416,45 +424,42 @@ export default function Songs() {
         </Card>
       )}
 
-      {/* Song List Frame */}
+      {/* MP3 Player Style Tracklist Frame */}
       <Card className="neu-card border-0 bg-white/75 dark:bg-card/75">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Browse Tracks</CardTitle>
+          <CardTitle className="text-lg font-bold">Worship Playlists</CardTitle>
           <CardDescription>
-            Search, filter by comfortably assigned keys, and manage properties.
+            Click any track row to open full live performance views and real‑time transpose controls in a new tab.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search active tracks..."
-              className="pl-10 h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10"
-            />
-          </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/80" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search tracks by title, lyrics..."
+                className="pl-10 h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10"
+              />
+            </div>
 
-          <div className="flex flex-wrap gap-3 items-center justify-between">
-            <Select value={selectedKey} onValueChange={setSelectedKey}>
-              <SelectTrigger className="h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 px-4 min-w-[140px]">
-                <SelectValue placeholder="Filter key" />
-              </SelectTrigger>
-              <SelectContent className="rounded-[18px]">
-                {availableKeys.map((key) => (
-                  <SelectItem key={key} value={key} className="rounded-xl">
-                    {key === "all" ? "All Keys" : `Key of ${key}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Select value={selectedKey} onValueChange={setSelectedKey}>
+                <SelectTrigger className="h-11 rounded-full bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 px-4 min-w-[140px]">
+                  <SelectValue placeholder="Filter key" />
+                </SelectTrigger>
+                <SelectContent className="rounded-[18px]">
+                  {availableKeys.map((key) => (
+                    <SelectItem key={key} value={key} className="rounded-xl">
+                      {key === "all" ? "All Keys" : `Key of ${key}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="rounded-full bg-indigo-500/10 text-indigo-500 px-3 py-1 font-bold border-0 text-[10px]">
-                {songs.length} total tracks
-              </Badge>
-              <Badge variant="outline" className="rounded-full px-3 py-1 font-bold text-[10px] border-black/10 dark:border-white/10">
-                {filteredSongs.length} matching criteria
+              <Badge variant="secondary" className="rounded-full bg-indigo-500/10 text-indigo-500 px-3 py-1.5 font-bold border-0 text-[10px]">
+                {filteredSongs.length} Songs Loaded
               </Badge>
             </div>
           </div>
@@ -468,16 +473,85 @@ export default function Songs() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {filteredSongs.map((song) => (
-                <SongCard
-                  key={song.id}
-                  song={song}
-                  onPreview={handlePreview}
-                  onDelete={handleDeleteSong}
-                  onEdit={handleEditSong}
-                />
-              ))}
+            /* MP3 Player List */
+            <div className="rounded-[24px] border border-black/5 dark:border-white/5 overflow-hidden divide-y divide-black/5 dark:divide-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
+              {filteredSongs.map((song, index) => {
+                const tagsArray = Array.isArray(song.tags) ? song.tags : [];
+                return (
+                  <div
+                    key={song.id}
+                    onClick={() => handleRowClick(song.id)}
+                    className="group flex items-center justify-between p-3.5 hover:bg-indigo-500/5 cursor-pointer transition-colors duration-300"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Play/Index indicator */}
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[16px] bg-black/5 dark:bg-white/5 text-muted-foreground group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                        <span className="text-xs font-bold group-hover:hidden">{index + 1}</span>
+                        <Play className="h-3.5 w-3.5 hidden group-hover:block" />
+                      </div>
+
+                      {/* Song Title & Tags */}
+                      <div className="min-w-0">
+                        <div className="font-bold text-foreground text-sm tracking-tight truncate group-hover:text-indigo-500 transition-colors">
+                          {song.title}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {tagsArray.map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-1.5 py-0.5 rounded-[6px] bg-black/5 dark:bg-white/5 text-muted-foreground text-[8px] font-bold uppercase tracking-wider"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {song.tempo && (
+                            <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                              • {song.tempo}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Meta stats & Quick Action buttons */}
+                    <div className="flex items-center gap-6">
+                      {/* Original Key Indicator */}
+                      <div className="text-right">
+                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Key</div>
+                        <div className="font-black text-indigo-500 dark:text-indigo-400 text-sm">{song.originalKey || "C"}</div>
+                      </div>
+
+                      {/* Audio Controls row */}
+                      <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-[14px]">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handlePreview(e, song)}
+                          className="h-8 w-8 rounded-[10px] hover:bg-white/50 dark:hover:bg-white/10"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleEditSong(e, song)}
+                          className="h-8 w-8 rounded-[10px] hover:bg-white/50 dark:hover:bg-white/10"
+                        >
+                          <Edit2 className="h-3.5 w-3.5 text-indigo-400 hover:text-indigo-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDeleteSong(e, song.id)}
+                          className="h-8 w-8 rounded-[10px] hover:bg-red-500/10 text-red-400 hover:text-red-500"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

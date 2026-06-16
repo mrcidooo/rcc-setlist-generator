@@ -8,6 +8,7 @@ import Songs from "./pages/Songs";
 import Singers from "./pages/Singers";
 import Setlists from "./pages/Setlists";
 import SingerKeyList from "./pages/SingerKeyList";
+import SongDetails from "./pages/SongDetails";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "next-themes";
 import { BottomNavigation } from "@/components/BottomNavigation";
@@ -28,6 +29,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/songs" element={<Songs />} />
+                  <Route path="/songs/:id" element={<SongDetails />} />
                   <Route path="/singers" element={<Singers />} />
                   <Route path="/setlists" element={<Setlists />} />
                   <Route path="/singer-keys" element={<SingerKeyList />} />
