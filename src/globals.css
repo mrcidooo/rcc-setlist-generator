@@ -139,6 +139,27 @@ button:not([disabled]),
   }
 }
 
+/* Circular theme transition starting from the toggle button */
+@keyframes theme-ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+    filter: blur(0px);
+  }
+
+  55% {
+    opacity: 0.24;
+  }
+
+  100% {
+    width: var(--theme-ripple-size);
+    height: var(--theme-ripple-size);
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
 /* Utility classes */
 .animate-kick {
   animation: kick 0.4s ease-out;
@@ -228,8 +249,12 @@ button:not([disabled]),
 
 /* Base styles configuration */
 @layer base {
+  html {
+    @apply transition-colors duration-700 ease-in-out;
+  }
+
   body {
-    @apply bg-background text-foreground overflow-x-hidden select-none;
+    @apply bg-background text-foreground overflow-x-hidden select-none transition-colors duration-700 ease-in-out;
     background-image: 
       radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
       radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
