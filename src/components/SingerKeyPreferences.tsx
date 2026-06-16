@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Trash2, Users, Sliders, KeyRound, Save, CloudLightning, Cloud } from "lucide-react";
+import { Music, Trash2, Users, Sliders, KeyRound, Save, CloudLightning, Cloud, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Singer = {
@@ -220,6 +220,39 @@ export default function SingerKeyPreferences() {
     toast({ title: "Song removed", description: `"${song.title}" was removed.` });
   };
 
+  const handleSaveMatrix = async () => {
+    setSyncStatus("syncing");
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      const userId = authUser?.user?.id ?? getAnonymousUserId();
+
+      // Delete any previous matrix for this user_id
+      await supabase
+        .from("key_matrix")
+        .delete()
+        .eq("user_id", userId);
+
+      // Insert the fresh matrix
+      const payload = {
+        user_id: userId,
+        matrix: singerKeyData,
+      };
+
+      const { error: insertError } = await supabase.from("key_matrix").insert(payload);
+
+      if (insertError) {
+        setSyncStatus("error");
+        toast({ title: "Save failed", description: insertError.message });
+      } else {
+        setSyncStatus("synced");
+        toast({ title: "Matrix saved", description: "Key preferences saved to database." });
+      }
+    } catch (err) {
+      setSyncStatus("error");
+      toast({ title: "Save failed", description: "An unexpected error occurred." });
+    }
+  };
+
   return (
     <div className="space-y-6 px-4 py-6 max-w-4xl mx-auto pb-32">
       {/* Header */}
@@ -234,26 +267,37 @@ export default function SingerKeyPreferences() {
           </p>
         </div>
 
-        {/* Real-time Status Indicator */}
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-1.5 rounded-full text-xs">
-          {syncStatus === "synced" && (
-            <>
-              <Cloud className="h-4 w-4 text-emerald-500 animate-bounce" />
-              <span className="font-bold text-emerald-500">Real-time Saved</span>
-            </>
-          )}
-          {syncStatus === "syncing" && (
-            <>
-              <CloudLightning className="h-4 w-4 text-indigo-500 animate-spin" />
-              <span className="font-bold text-indigo-500">Saving to DB...</span>
-            </>
-          )}
-          {syncStatus === "error" && (
-            <>
-              <CloudLightning className="h-4 w-4 text-rose-500 animate-pulse" />
-              <span className="font-bold text-rose-500">Offline Fallback</span>
-            </>
-          )}
+        {/* Real-time Status Indicator and Save Button */}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 px-3 py-1.5 rounded-full text-xs">
+            {syncStatus === "synced" && (
+              <>
+                <Cloud className="h-4 w-4 text-emerald-500 animate-bounce" />
+                <span className="font-bold text-emerald-500">Real-time Saved</span>
+              </>
+            )}
+            {syncStatus === "syncing" && (
+              <>
+                <CloudLightning className="h-4 w-4 text-indigo-500 animate-spin" />
+                <span className="font-bold text-indigo-500">Saving to DB...</span>
+              </>
+            )}
+            {syncStatus === "error" && (
+              <>
+                <CloudLightning className="h-4 w-4 text-rose-500 animate-pulse" />
+                <span className="font-bold text-rose-500">Offline Fallback</span>
+              </>
+            )}
+          </div>
+          
+          <Button
+            onClick={handleSaveMatrix}
+            disabled={syncStatus === "syncing"}
+            className="h-10 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_12px_rgba(99,102,241,0.3)] font-bold px-4 text-sm flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            Save Matrix
+          </Button>
         </div>
       </div>
 
