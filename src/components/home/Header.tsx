@@ -74,7 +74,7 @@ export const Header = () => {
               <rect x="47" y="20" width="6" height="24" rx="1.5" fill="white" />
               <rect x="38" y="26" width="24" height="6" rx="1.5" fill="white" />
               {/* White Decrescendo Bars */}
-              <rect x<rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
+              <rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
               <rect x="36" y="60" width="28" height="3" rx="1.5" fill="white" />
               <rect x="42" y="68" width="16" height="3" rx="1.5" fill="white" />
             </svg>
