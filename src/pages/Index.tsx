@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/home/Header";
 import { DashboardStats } from "@/components/home/DashboardStats";
 import { TeamMembers } from "@/components/home/TeamMembers";
-import { UserPlus, Library, FileText, Download } from "lucide-react";
+import { UserPlus, Library, FileText, Download, Share, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type VoiceType = "male" | "female";
 
@@ -28,45 +29,23 @@ const quickActions = [
 const getVoiceTypeLabel = (voice: VoiceType) => (voice === "male" ? "Male" : "Female");
 
 /* -----------------------------------------------------------------
-   Hook: capture the native PWA install prompt and expose a trigger
-   ----------------------------------------------------------------- */
-function useInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-  const [canInstall, setCanInstall] = useState(false);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault(); // stop the default mini‑infobar
-      setDeferredPrompt(e);
-      setCanInstall(true);
-    };
-    window.addEventListener("beforeinstallprompt", handler as any);
-    return () => window.removeEventListener("beforeinstallprompt", handler as any);
-  }, []);
-
-  const promptInstall = async () => {
-    if (!deferredPrompt) return;
-    // @ts-ignore – the event has a prompt() method
-    const promptEvent = deferredPrompt as any;
-    promptEvent.prompt();
-    const { outcome } = await promptEvent.userChoice;
-    setDeferredPrompt(null);
-    setCanInstall(false);
-    return outcome;
-  };
-
-  return { canInstall, promptInstall };
-}
-
-/* -----------------------------------------------------------------
    Home page component
    ----------------------------------------------------------------- */
 export default function Index() {
   const [singers, setSingers] = useState<Singer[]>([]);
   const [totalSongs, setTotalSongs] = useState(0);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const { toast } = useToast();
 
-  const { canInstall, promptInstall } = useInstallPrompt();
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,26 +79,17 @@ export default function Index() {
     fetchData();
   }, []);
 
-  const handleQuickAction = (action: typeof quickActions[number]["action"]) => {
-    switch (action) {
-      case "singer":
-        toast({
-          title: "Team singer management available under 'Singers' tab",
-          description: "Use singers navigation to add team members.",
-        });
-        break;
-      case "setlist":
-        toast({
-          title: "Setlist building workflow ready!",
-          description: "Press the central calendar action button to open.",
-        });
-        break;
-      case "pdf":
-        toast({
-          title: "PDF generation is automated in Setlists!",
-          description: "Choose any setlist to instantly download high-quality PDFs.",
-        });
-        break;
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        toast({ title: "App installed!", description: "Enjoy using Worship Setlist Generator offline." });
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Native one-click is not available (e.g. iOS Safari, or already installed). Show the custom step-by-step visual helper!
+      setIsInstallGuideOpen(true);
     }
   };
 
@@ -136,26 +106,73 @@ export default function Index() {
         <TeamMembers singers={singers} getLabel={getVoiceTypeLabel} />
       </div>
 
-      {/* Install to Device button – always shown at the bottom if supported */}
-      {canInstall && (
-        <div className="mt-6 flex justify-center">
-          <Button
-            variant="default"
-            onClick={async () => {
-              const outcome = await promptInstall();
-              if (outcome === "accepted") {
-                toast({ title: "App installed!", description: "Enjoy using RCC Setlist Generator offline." });
-              } else {
-                toast({ title: "Install cancelled", description: "You can install later from the browser menu." });
-              }
-            }}
-            className="flex items-center gap-2 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6 py-2"
-          >
-            <Download className="h-4 w-4" />
-            Install to Device
-          </Button>
-        </div>
-      )}
+      {/* Install to Device Button (Always Visible) */}
+      <div className="mt-8 flex justify-center">
+        <Button
+          onClick={handleInstallClick}
+          className="flex items-center gap-2 rounded-[22px] bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white shadow-[0_4px_18px_rgba(6,182,212,0.4)] hover:scale-105 transition-transform duration-300 font-bold px-8 py-5 text-sm"
+        >
+          <Download className="h-4.5 w-4.5 animate-bounce" />
+          Install App to Home Screen
+        </Button>
+      </div>
+
+      {/* Elegant, step-by-step install guide dialog */}
+      <Dialog open={isInstallGuideOpen} onOpenChange={setIsInstallGuideOpen}>
+        <DialogContent className="max-w-md rounded-[32px] border-0 bg-white/95 dark:bg-card/95 shadow-2xl p-6 backdrop-blur-3xl">
+          <DialogHeader className="flex flex-row items-start justify-between pb-4 border-b border-black/5 dark:border-white/5">
+            <div className="space-y-1">
+              <DialogTitle className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
+                <Download className="h-5 w-5 text-indigo-500" />
+                Add to Home Screen
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Follow these simple steps to run as a standalone, seamless app.
+              </DialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsInstallGuideOpen(false)}
+              aria-label="Close guide"
+              className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+
+          <div className="space-y-5 mt-6">
+            {/* iOS Safari Guide */}
+            <div className="rounded-[24px] border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] p-4.5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-indigo-500 uppercase tracking-wider">
+                Apple iOS (iPhone / iPad)
+              </div>
+              <ol className="text-xs space-y-2 text-foreground/85 list-decimal pl-4.5">
+                <li>Open this page in the <strong className="font-extrabold text-foreground">Safari Browser</strong>.</li>
+                <li>
+                  Tap the <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><Share className="h-3 w-3 inline" /> Share</span> button at the bottom of the screen.
+                </li>
+                <li>
+                  Scroll down the share sheet and tap <span className="inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold"><Plus className="h-3 w-3 inline" /> Add to Home Screen</span>.
+                </li>
+              </ol>
+            </div>
+
+            {/* Android / Chrome Guide */}
+            <div className="rounded-[24px] border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] p-4.5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-cyan-500 uppercase tracking-wider">
+                Android / Google Chrome
+              </div>
+              <ol className="text-xs space-y-2 text-foreground/85 list-decimal pl-4.5">
+                <li>Tap the three vertical dots (menu icon) on Chrome's top-right corner.</li>
+                <li>
+                  Select <strong className="font-bold text-foreground">Add to Home screen</strong> or <strong className="font-bold text-foreground">Install App</strong>.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
