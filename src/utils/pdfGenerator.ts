@@ -26,22 +26,23 @@ export async function generateSetlistPDF(
     });
   }
 
-  // 2. Initialize a clean direct-download jsPDF Document
+  // 2. Initialize a clean direct-download jsPDF Document (A4 portrait)
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
     format: "a4",
   });
 
-  const margin = 20;
+  // 0.5 inch margin on all sides = 12.7 mm
+  const margin = 12.7;
   const pageHeight = 297;
-  const limitY = 270;
-  let y = 20;
+  const limitY = 280; // slightly extended considering smaller bottom margins
+  let y = margin + 10;
 
   const checkPageBreak = (neededHeight: number) => {
     if (y + neededHeight > limitY) {
       doc.addPage();
-      y = 20;
+      y = margin + 10;
     }
   };
 
@@ -60,34 +61,50 @@ export async function generateSetlistPDF(
 
   // 3. Process each song
   songs.forEach((song, idx) => {
-    // Each song starts on a new page except potentially the very first if we have enough space
+    // Each song starts on a new page except potentially the very first
     if (idx > 0) {
       doc.addPage();
-      y = 20;
+      y = margin + 10;
     }
 
     const rawLyrics = lyricsMap[song.songId] || "";
     const transposedLyrics = transposeLyrics(rawLyrics, song.originalKey, song.selectedKey);
     const isTransposed = song.selectedKey.trim() !== song.originalKey.trim();
+    
+    // Key info in Sentence Case: "Key of G (transposed from D)" or "Key of D"
     const keyInfo = isTransposed 
-      ? `KEY: ${song.selectedKey} (TRANSPOSED FROM ${song.originalKey})` 
-      : `KEY: ${song.originalKey} (ORIGINAL KEY)`;
+      ? `Key of ${song.selectedKey} (transposed from ${song.originalKey})   |   Lead vocal: ${song.singerName}` 
+      : `Key of ${song.originalKey}   |   Lead vocal: ${song.singerName}`;
 
-    // --- RENDER YELLOW HIGHLIGHTED HEADER BOX ---
-    checkPageBreak(25);
+    // Titles: 16pt, Bold, UPPERCASE
+    const titleText = song.songTitle.toUpperCase();
+
+    // --- RENDER HIGH-CONTRAST INDIVIDUAL TEXT HIGHLIGHTS ---
+    // Instead of a giant full-width block, draw yellow boxes behind the exact width of text parts only
+    checkPageBreak(35);
+
+    // Get text widths
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(16);
+    const titleWidth = doc.getTextWidth(titleText);
+    const keyInfoWidth = doc.getTextWidth(keyInfo);
+
+    // 1. Draw yellow highlight behind Title
     doc.setFillColor(254, 240, 138); // Yellow highlight #FEF08A
-    doc.rect(margin, y, 170, 22, "F");
+    doc.rect(margin, y - 6, titleWidth + 4, 8, "F");
 
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(17, 24, 39); // High contrast dark charcoal
-    doc.text(song.songTitle.toUpperCase(), margin + 5, y + 9);
+    // 2. Render Title text
+    doc.setTextColor(17, 24, 39);
+    doc.text(titleText, margin + 2, y);
+    y += 10;
 
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(75, 85, 99); // Medium-dark gray
-    doc.text(`${keyInfo}   |   VOCAL: ${song.singerName.toUpperCase()}`, margin + 5, y + 16);
-    y += 28;
+    // 3. Draw yellow highlight behind Key Information
+    doc.setFillColor(254, 240, 138); // Yellow highlight #FEF08A
+    doc.rect(margin, y - 6, keyInfoWidth + 4, 8, "F");
+
+    // 4. Render Key Information text
+    doc.text(keyInfo, margin + 2, y);
+    y += 15;
 
     // --- RENDER LYRICS WITH INLINE CHORDS & SEGMENTS ---
     const lines = transposedLyrics.split("\n");
@@ -107,7 +124,7 @@ export async function generateSetlistPDF(
         if (!part) return;
 
         if (part.startsWith("<") && part.endsWith(">")) {
-          // Song Segment (Intro, Chorus, Verse etc.) -> Bold
+          // Song Segment label -> Bold uppercase
           const segmentName = part.slice(1, -1).toUpperCase();
           doc.setFont("Helvetica", "bold");
           doc.text(segmentName, currentX, y);
@@ -119,7 +136,7 @@ export async function generateSetlistPDF(
           doc.text(chordName, currentX, y);
           currentX += doc.getTextWidth(chordName + " ");
         } else {
-          // Normal lyric text -> Regular font weight
+          // Normal lyric text -> Regular font weight, 11pt
           doc.setFont("Helvetica", "normal");
           doc.text(part, currentX, y);
           currentX += doc.getTextWidth(part);

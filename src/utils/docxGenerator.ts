@@ -4,7 +4,7 @@ import { SetlistSong } from "@/components/setlist-builder/types";
 import { transposeLyrics } from "./transposer";
 
 function formatLyricsDOCX(lyrics: string): string {
-  if (!lyrics) return '<p style="font-style: italic; color: #666;">No lyrics available.</p>';
+  if (!lyrics) return '<p style="font-style: italic; color: #666; font-family: Arial, sans-serif; font-size: 11pt;">No lyrics available.</p>';
   
   const lines = lyrics.split("\n");
   return lines
@@ -12,16 +12,16 @@ function formatLyricsDOCX(lyrics: string): string {
       const parts = line.split(/(\[[^\]]+\]|<[^>]+>)/g);
       const formattedParts = parts.map((part) => {
         if (/^\[[^\]]+\]$/.test(part)) {
-          // Stripped brackets, rendered bold for MS Word
-          return `<strong style="color: #4f46e5; font-weight: bold; font-family: monospace;">${part.slice(1, -1)}</strong>`;
+          // Stripped brackets, rendered bold, 11pt
+          return `<strong style="color: #4f46e5; font-weight: bold; font-family: Arial, sans-serif; font-size: 11pt;">${part.slice(1, -1)}</strong>`;
         }
         if (/^<[^>]+>$/.test(part)) {
-          // Segment label in bold uppercase
-          return `<strong style="color: #7c3aed; font-weight: bold; text-transform: uppercase;">${part.slice(1, -1)}</strong>`;
+          // Segment label in bold uppercase, 11pt
+          return `<strong style="color: #7c3aed; font-weight: bold; text-transform: uppercase; font-family: Arial, sans-serif; font-size: 11pt;">${part.slice(1, -1)}</strong>`;
         }
-        return `<span>${part}</span>`;
+        return `<span style="font-family: Arial, sans-serif; font-size: 11pt;">${part}</span>`;
       });
-      return `<p style="margin: 4px 0; font-family: monospace; font-size: 11pt; color: #1a1a1a;">${formattedParts.join("")}</p>`;
+      return `<p style="margin: 4px 0; font-family: Arial, sans-serif; font-size: 11pt; color: #1a1a1a; line-height: 1.4;">${formattedParts.join("")}</p>`;
     })
     .join("");
 }
@@ -38,21 +38,26 @@ export function generateSetlistDOCX(
     const rawLyrics = lyricsMap[song.songId] || "";
     const transposedLyrics = transposeLyrics(rawLyrics, song.originalKey, song.selectedKey);
     const isTransposed = song.selectedKey.trim() !== song.originalKey.trim();
-    const keyInfo = isTransposed 
-      ? `KEY: ${song.selectedKey} (TRANSPOSED FROM ${song.originalKey})` 
-      : `KEY: ${song.originalKey} (ORIGINAL KEY)`;
+    
+    // Key Information: 16pt, Bold, Sentence Case
+    const keyInfoText = isTransposed 
+      ? `Key of ${song.selectedKey} (transposed from ${song.originalKey})   |   Lead vocal: ${song.singerName}` 
+      : `Key of ${song.originalKey}   |   Lead vocal: ${song.singerName}`;
+
+    // Song titles: 16pt, Bold, UPPERCASE
+    const titleText = song.songTitle.toUpperCase();
 
     songsHTML += `
       <div style="${idx > 0 ? "page-break-before: always; margin-top: 30px;" : ""}">
-        <!-- Yellow Highlight Header -->
-        <div style="background-color: #fef08a; padding: 12px; border: 1px solid #eab308; margin-bottom: 12px;">
-          <h2 style="margin: 0; font-size: 16pt; font-weight: bold; color: #111827; text-transform: uppercase; font-family: Arial, sans-serif;">
-            ${song.songTitle.toUpperCase()} &mdash; ${keyInfo}
-          </h2>
-          <p style="margin: 4px 0 0; font-size: 10pt; color: #4b5563; font-weight: bold; font-family: Arial, sans-serif;">
-            LEAD VOCAL: ${song.singerName.toUpperCase()}
-          </p>
-        </div>
+        <!-- Song Title: 16pt, Bold, UPPERCASE with inline yellow highlight only -->
+        <h2 style="margin: 0 0 8px 0; font-size: 16pt; font-weight: bold; color: #111827; font-family: Arial, sans-serif;">
+          <span style="background-color: #fef08a; padding: 2px 6px;">${titleText}</span>
+        </h2>
+        
+        <!-- Key Information: 16pt, Bold, Sentence Case with inline yellow highlight only -->
+        <h3 style="margin: 0 0 16px 0; font-size: 16pt; font-weight: bold; color: #4b5563; font-family: Arial, sans-serif;">
+          <span style="background-color: #fef08a; padding: 2px 6px;">${keyInfoText}</span>
+        </h3>
 
         <!-- Performance Notes -->
         ${
@@ -63,7 +68,7 @@ export function generateSetlistDOCX(
             : ""
         }
 
-        <!-- Lyrics/Chords -->
+        <!-- Lyrics/Chords: 11pt regular, Arial -->
         <div style="margin-bottom: 30px; line-height: 1.5;">
           ${formatLyricsDOCX(transposedLyrics)}
         </div>
@@ -80,11 +85,24 @@ export function generateSetlistDOCX(
           <w:WordDocument>
             <w:View>Print</w:View>
             <w:Zoom>100</w:Zoom>
+            <!-- 0.5 inch margins: top, right, bottom, left are 720 dxa (1 inch = 1440 dxa) -->
+            <w:PageMargins w:top="720" w:right="720" w:bottom="720" w:left="720" />
           </w:WordDocument>
         </xml>
         <![endif]-->
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 0.5in;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0.5in;
+            color: #111827;
+          }
+        </style>
       </head>
-      <body style="font-family: Arial, sans-serif; padding: 40px; color: #111827;">
+      <body>
         <div style="margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
           <h1 style="margin: 0; font-size: 22pt; font-weight: bold; text-transform: uppercase;">${setlistName}</h1>
           <p style="margin: 4px 0 0; font-size: 11pt; color: #4b5563;">Service Date: ${new Date(serviceDate).toLocaleDateString()}</p>
