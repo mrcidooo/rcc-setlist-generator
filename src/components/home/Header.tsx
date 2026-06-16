@@ -12,13 +12,16 @@ export const Header = () => {
 
   const [buttonRipple, setButtonRipple] = useState(false);
   const [screenRipple, setScreenRipple] = useState(false);
+  const [reveal, setReveal] = useState(false); // new state for circular reveal
 
   const handleToggle = () => {
     setTheme(isDark ? "light" : "dark");
     setButtonRipple(true);
     setScreenRipple(true);
+    setReveal(true); // trigger reveal
   };
 
+  // button ripple cleanup
   useEffect(() => {
     if (buttonRipple) {
       const timer = setTimeout(() => setButtonRipple(false), 300);
@@ -26,6 +29,7 @@ export const Header = () => {
     }
   }, [buttonRipple]);
 
+  // screen ripple cleanup
   useEffect(() => {
     if (screenRipple) {
       const timer = setTimeout(() => setScreenRipple(false), 600);
@@ -33,8 +37,23 @@ export const Header = () => {
     }
   }, [screenRipple]);
 
+  // circular reveal cleanup
+  useEffect(() => {
+    if (reveal) {
+      const timer = setTimeout(() => setReveal(false), 800); // duration matches CSS animation
+      return () => clearTimeout(timer);
+    }
+  }, [reveal]);
+
   return (
-    <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
+    <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3 transition-colors duration-600">
+      {/* Circular reveal overlay */}
+      {reveal && (
+        <div className="fixed inset-0 pointer-events-none z-20 overflow-hidden">
+          <div className="absolute inset-0 bg-background dark:bg-background animate-circular-reveal" />
+        </div>
+      )}
+
       {screenRipple && (
         <div className="fixed inset-0 pointer-events-none animate-ripple-screen bg-indigo-500/10 rounded-full" />
       )}
@@ -55,7 +74,7 @@ export const Header = () => {
               <rect x="47" y="20" width="6" height="24" rx="1.5" fill="white" />
               <rect x="38" y="26" width="24" height="6" rx="1.5" fill="white" />
               {/* White Decrescendo Bars */}
-              <rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
+              <rect x<rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
               <rect x="36" y="60" width="28" height="3" rx="1.5" fill="white" />
               <rect x="42" y="68" width="16" height="3" rx="1.5" fill="white" />
             </svg>
@@ -76,7 +95,7 @@ export const Header = () => {
             size="icon"
             aria-label="Toggle dark mode"
             onClick={handleToggle}
-            className="h-10 w-10 rounded-[18px] hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 relative overflow-hidden"
+            className="h-10 w-10 rounded-[18px] hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 relative overflow-hidden transition-colors duration-600"
           >
             <span
               className={`
