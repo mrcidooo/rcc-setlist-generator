@@ -2,14 +2,153 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#6366F1" />
+    
+    <!-- Theme & App Colors -->
+    <meta name="theme-color" content="#0B0E1B" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="WorshipGen" />
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/placeholder.svg" />
+
     <title>Worship Setlist Generator</title>
+
+    <style>
+      /* Splash screen styles before React mounts */
+      #pwa-splash {
+        position: fixed;
+        inset: 0;
+        background-color: #0B0E1B;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+      }
+
+      .splash-logo-container {
+        width: 110px;
+        height: 110px;
+        margin-bottom: 24px;
+        animation: pulseLogo 2s infinite ease-in-out;
+      }
+
+      .splash-title {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: #ffffff;
+        margin: 0;
+        text-align: center;
+      }
+
+      .splash-subtitle {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        color: #6366F1;
+        text-transform: uppercase;
+        margin-top: 6px;
+        text-align: center;
+      }
+
+      .splash-loader {
+        width: 40px;
+        height: 4px;
+        background-color: rgba(99, 102, 241, 0.2);
+        border-radius: 99px;
+        margin-top: 32px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .splash-loader-bar {
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(90deg, #0891b2, #6366F1);
+        border-radius: 99px;
+        position: absolute;
+        animation: loadingBar 1.5s infinite ease-in-out;
+      }
+
+      @keyframes pulseLogo {
+        0%, 100% {
+          transform: scale(1);
+          filter: drop-shadow(0 0 15px rgba(8, 145, 178, 0.4));
+        }
+        50% {
+          transform: scale(1.05);
+          filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.6));
+        }
+      }
+
+      @keyframes loadingBar {
+        0% {
+          left: -40%;
+        }
+        50% {
+          left: 100%;
+        }
+        100% {
+          left: -40%;
+        }
+      }
+    </style>
   </head>
 
   <body>
+    <!-- Premium pre-mount splash screen with new brand logo -->
+    <div id="pwa-splash">
+      <div class="splash-logo-container">
+        <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+          <defs>
+            <linearGradient id="splashPickGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0891b2" />
+              <stop offset="100%" stopColor="#0e7490" />
+            </linearGradient>
+          </defs>
+          <path d="M 50,5 C 75,5 95,20 95,45 C 95,75 65,92 50,95 C 35,92 5,75 5,45 C 5,20 25,5 50,5 Z" fill="url(#splashPickGrad)" />
+          <!-- White Cross -->
+          <rect x="47" y="20" width="6" height="24" rx="1.5" fill="white" />
+          <rect x="38" y="26" width="24" height="6" rx="1.5" fill="white" />
+          <!-- White Decrescendo Bars -->
+          <rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
+          <rect x="36" y="60" width="28" height="3" rx="1.5" fill="white" />
+          <rect x="42" y="68" width="16" height="3" rx="1.5" fill="white" />
+        </svg>
+      </div>
+      <h1 class="splash-title">Worship</h1>
+      <p class="splash-subtitle">Setlist Generator</p>
+      
+      <div class="splash-loader">
+        <div class="splash-loader-bar"></div>
+      </div>
+    </div>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+      // Automatically fade out the premium splash screen once React application is hydrated
+      window.addEventListener('load', () => {
+        const splash = document.getElementById('pwa-splash');
+        if (splash) {
+          setTimeout(() => {
+            splash.style.opacity = '0';
+            splash.style.visibility = 'hidden';
+            setTimeout(() => {
+              splash.remove();
+            }, 500);
+          }, 600); // slight initial delay to let React fully render
+        }
+      });
+    </script>
   </body>
 </html>
