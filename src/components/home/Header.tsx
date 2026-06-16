@@ -10,9 +10,7 @@ export const Header = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
-  // Small ripple for the button itself
   const [buttonRipple, setButtonRipple] = useState(false);
-  // Full‑screen ripple that covers the whole page
   const [screenRipple, setScreenRipple] = useState(false);
 
   const handleToggle = () => {
@@ -21,7 +19,6 @@ export const Header = () => {
     setScreenRipple(true);
   };
 
-  // Clean up button ripple
   useEffect(() => {
     if (buttonRipple) {
       const timer = setTimeout(() => setButtonRipple(false), 300);
@@ -29,7 +26,6 @@ export const Header = () => {
     }
   }, [buttonRipple]);
 
-  // Clean up screen ripple (duration matches the CSS animation)
   useEffect(() => {
     if (screenRipple) {
       const timer = setTimeout(() => setScreenRipple(false), 600);
@@ -37,59 +33,44 @@ export const Header = () => {
     }
   }, [screenRipple]);
 
-  // Theme‑aware ring colour for the logo
-  const logoRing = isDark
-    ? "ring-2 ring-indigo-600/30"
-    : "ring-2 ring-indigo-300/30";
-
-  // Slight inner shadow that works in both themes
-  const logoShadow = "shadow-[inset_0_1px_3px_rgba(0,0,0,0.12)]";
-
   return (
     <header className="relative z-10 glass-panel rounded-[32px] p-5 mb-6 mx-1 mt-3">
-      {/* Full‑screen ripple overlay */}
       {screenRipple && (
         <div className="fixed inset-0 pointer-events-none animate-ripple-screen bg-indigo-500/10 rounded-full" />
       )}
 
       <div className="flex items-center justify-between">
-        {/* Logo / Identity */}
+        {/* Brand identity featuring new Custom Guitar Pick Logo */}
         <div className="flex items-center gap-3">
-          <div
-            className={`
-              flex h-11 w-11 items-center justify-center rounded-2xl
-              bg-gradient-to-tr from-indigo-500 to-purple-600
-              ${logoShadow}
-              animate-[kick_0.4s_ease-out] ${logoRing}
-            `}
-          >
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-              />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden shadow-md animate-[kick_0.4s_ease-out]">
+            <svg viewBox="0 0 100 100" className="h-full w-full">
+              <defs>
+                <linearGradient id="pickGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#0891b2" />
+                  <stop offset="100%" stopColor="#0e7490" />
+                </linearGradient>
+              </defs>
+              <path d="M 50,5 C 75,5 95,20 95,45 C 95,75 65,92 50,95 C 35,92 5,75 5,45 C 5,20 25,5 50,5 Z" fill="url(#pickGrad)" />
+              {/* White Cross */}
+              <rect x="47" y="20" width="6" height="24" rx="1.5" fill="white" />
+              <rect x="38" y="26" width="24" height="6" rx="1.5" fill="white" />
+              {/* White Decrescendo Bars */}
+              <rect x="30" y="52" width="40" height="3" rx="1.5" fill="white" />
+              <rect x="36" y="60" width="28" height="3" rx="1.5" fill="white" />
+              <rect x="42" y="68" width="16" height="3" rx="1.5" fill="white" />
             </svg>
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              RCC Setlist Generator
+              Worship
             </h1>
             <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase opacity-80">
-              Worship Space
+              Setlist Generator
             </p>
           </div>
         </div>
 
-        {/* Header Controls */}
         <div className="flex items-center gap-2">
-          {/* Theme button with its own tiny ripple */}
           <Button
             variant="ghost"
             size="icon"
@@ -110,7 +91,6 @@ export const Header = () => {
             )}
           </Button>
 
-          {/* Settings shortcut button */}
           <Link to="/singer-keys">
             <Button
               variant="ghost"
@@ -122,7 +102,6 @@ export const Header = () => {
             </Button>
           </Link>
 
-          {/* User profile avatar */}
           <div className="h-9 w-9 rounded-[16px] bg-gradient-to-br from-indigo-100 to-purple-200 dark:from-indigo-950/50 dark:to-purple-950/50 border border-indigo-500/20 flex items-center justify-center text-xs font-semibold text-indigo-600 dark:text-indigo-400">
             <User className="h-4 w-4" />
           </div>
