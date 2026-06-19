@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Music, Sliders } from "lucide-react";
+import { X, Music, Sliders, Volume2 } from "lucide-react";
 import { Sparkles } from "lucide-react";
 import { transposeLyrics } from "@/utils/transposer";
-import { supabase } from "@/lib/supabaseClient";
 
 type SongPreviewData = {
   title: string;
@@ -21,6 +20,31 @@ type SetlistSongVideoDialogProps = {
   open: boolean;
   onClose: () => void;
 };
+
+type YouTubePlayer = {
+  setPlaybackQuality: (quality: string) => void;
+  setPlaybackRate: (rate: number) => void;
+};
+
+type YouTubeWindow = Window &
+  typeof globalThis & {
+    YT: {
+      Player: new (
+        elementId: HTMLDivElement,
+        config: {
+          height: string;
+          width: string;
+          videoId: string;
+          playerVars: Record<string, number>;
+          events: {
+            onReady: (event: { target: YouTubePlayer }) => void;
+            onError: (event: { data: number }) => void;
+          };
+        }
+      ) => YouTubePlayer;
+    };
+    onYouTubeIframeAPIReady: () => void;
+  };
 
 const keysArray = [
   "C",
@@ -37,6 +61,11 @@ const keysArray = [
   "B",
 ];
 
+function getYouTubeVideoId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+  return match ? match[1] : null;
+}
+
 function getSemitoneDifference(a: string, b: string): number {
   const idxA = keysArray.indexOf(a);
   const idxB = keysArray.indexOf(b);
@@ -47,37 +76,70 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
   if (!song) return null;
   const [currentKey, setCurrentKey] = useState<string>(song.originalKey);
   const [selectedKey, setSelectedKey] = useState<string>(song.originalKey);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load audio URL from Supabase
+  // Extract YouTube video ID and load IFrame API
   useEffect(() => {
-    const loadAudio = async () => {
-      const { data, error } = await supabase
-        .from("songs")
-        .select("audio_url")
-        .eq("id", songId)
-        .single();
-      if (!error && data) {
-        setAudioUrl(data.audio_url);
+    if (song.youtubeLink) {
+      const videoId = getYouTubeVideoId(song.youtubeLink);
+      setYoutubeVideoId(videoId);
+      
+      // Load YouTube IFrame API script
+      if (!(window as YouTubeWindow).YT) {
+        const script = document.createElement("script");
+        script.src = "https://www.youtube.com/iframe_api";
+        script.async = true;
+        document.body.appendChild(script);
+        
+        (window as YouTubeWindow).onYouTubeIframeAPIReady = () => {
+          setIsPlayerReady(true);
+          createPlayer();
+        };
+      } else {
+        setIsPlayerReady(true);
+        createPlayer();
       }
-    };
-    loadAudio();
-  }, [songId]);
+    }
+  }, [song.youtubeLink]);
+
+  const createPlayer = () => {
+    if ((window as YouTubeWindow).YT && youtubeVideoId && containerRef.current) {
+      playerRef.current = new (window as YouTubeWindow).YT.Player(containerRef.current, {
+        height: "0",
+        width: "0",
+        videoId: youtubeVideoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0,
+        },
+        events: {
+          onReady: (event) => {
+            event.target.setPlaybackQuality("hd1080");
+            setIsPlayerReady(true);
+          },
+          onError: (event) => {
+            console.error("YouTube player error:", event.data);
+          },
+        },
+      });
+    }
+  };
 
   // Keep currentKey in sync with selectedKey
   useEffect(() => {
     setCurrentKey(selectedKey);
-  }, [selectedKey]);
-
-  // Update playback rate when the selected key changes
-  useEffect(() => {
-    if (audioRef.current && selectedKey) {
+    if (playerRef.current && isPlayerReady) {
       const diff = getSemitoneDifference(currentKey, selectedKey);
       const rate = Math.pow(2, diff / 12);
-      audioRef.current.playbackRate = rate;
+      playerRef.current.setPlaybackRate(rate);
     }
-  }, [selectedKey, currentKey]);
+  }, [selectedKey, currentKey, isPlayerReady]);
 
   // Handle key change from dropdown
   const handleKeyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -184,22 +246,24 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
             </select>
           </div>
 
-          {/* Audio player */}
-          {audioUrl ? (
-            <div className="rounded-[24px] border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] p-4">
-              <audio
-                ref={audioRef}
-                src={audioUrl}
-                controls
-                className="w-full"
-                style={{ width: "100%" }}
-              />
+          {/* YouTube Audio Player */}
+          <div className="rounded-[24px] border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] p-4">
+            <div ref={containerRef} className="w-full aspect-video bg-black rounded-[16px] overflow-hidden">
+              {!youtubeVideoId && (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Volume2 className="h-8 w-8 mb-2" />
+                  <p>No YouTube link available for this song</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-4 text-xs text-muted-foreground">
-              No audio file available for this song.
+            <div className="mt-3 text-xs text-muted-foreground">
+              {isPlayerReady ? (
+                <span className="text-green-500">✓ YouTube audio loaded and ready</span>
+              ) : (
+                <span>Loading YouTube audio...</span>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Lyrics section */}
           <div className="mt-4">
