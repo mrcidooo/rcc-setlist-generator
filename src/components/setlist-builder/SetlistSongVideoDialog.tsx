@@ -64,7 +64,7 @@ declare global {
         getDuration: () => number;
         setPlaybackQuality: (quality: string) => void;
         setPlaybackRate: (rate: number) => void;
-        destroy: () => void; // Add destroy method
+        destroy: () => void;
       };
     };
     onYouTubeIframeAPIReady?: () => void;
@@ -115,84 +115,95 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const playerRef = useRef<any>(null); // YT.Player type is any
+  const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Extract YouTube video ID and load IFrame API
+  // Extract YouTube video ID
   useEffect(() => {
     if (song.youtubeLink) {
       const videoId = getYouTubeVideoId(song.youtubeLink);
       setYoutubeVideoId(videoId);
-      
-      // Load YouTube IFrame API script
-      if (!window.YT) {
-        const script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        script.async = true;
-        document.body.appendChild(script);
-        
-        window.onYouTubeIframeAPIReady = () => {
-          setIsPlayerReady(true);
-          createPlayer();
-        };
-      } else {
-        setIsPlayerReady(true);
-        createPlayer();
-      }
     }
   }, [song.youtubeLink]);
 
-  const createPlayer = () => {
-    if (window.YT && youtubeVideoId && containerRef.current) {
-      playerRef.current = new window.YT.Player(containerRef.current, {
-        height: "0",
-        width: "0",
-        videoId: youtubeVideoId,
-        playerVars: {
-          autoplay: 0,
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-          iv_load_policy: 3,
-        },
-        events: {
-          onReady: (event: any) => {
-            event.target.setPlaybackQuality("hd1080");
-            setIsPlayerReady(true);
-            // Get duration after ready
-            const dur = event.target.getDuration();
-            if (dur > 0) {
-              setDuration(dur);
-            }
+  // Load YouTube IFrame API and create player
+  useEffect(() => {
+    if (!youtubeVideoId || !open) return;
+
+    const createPlayer = () => {
+      if (window.YT && containerRef.current) {
+        playerRef.current = new window.YT.Player(containerRef.current, {
+          height: "0",
+          width: "0",
+          videoId: youtubeVideoId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            iv_load_policy: 3,
           },
-          onError: (event: any) => {
-            console.error("YouTube player error:", event.data);
+          events: {
+            onReady: (event) => {
+              event.target.setPlaybackQuality("hd1080");
+              setIsPlayerReady(true);
+              const dur = event.target.getDuration();
+              if (dur > 0) {
+                setDuration(dur);
+              }
+            },
+            onError: (event) => {
+              console.error("YouTube player error:", event.data);
+            },
+            onStateChange: (event) => {
+              switch (event.data) {
+                case window.YT.PlayerState.PLAYING:
+                  setIsPlaying(true);
+                  startInterval();
+                  break;
+                case window.YT.PlayerState.PAUSED:
+                case window.YT.PlayerState.ENDED:
+                  setIsPlaying(false);
+                  stopInterval();
+                  break;
+                case window.YT.PlayerState.BUFFERING:
+                  setIsPlaying(true);
+                  break;
+                default:
+                  break;
+              }
+            },
           },
-          onStateChange: (event: any) => {
-            // Update play state based on player state
-            switch (event.data) {
-              case window.YT.PlayerState.PLAYING:
-                setIsPlaying(true);
-                startInterval();
-                break;
-              case window.YT.PlayerState.PAUSED:
-              case window.YT.PlayerState.ENDED:
-                setIsPlaying(false);
-                stopInterval();
-                break;
-              case window.YT.PlayerState.BUFFERING:
-                setIsPlaying(true);
-                break;
-              default:
-                break;
-            }
-          },
-        },
-      });
+        });
+      }
+    };
+
+    // Check if YT API is already loaded
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+    } else {
+      // Load the API script
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScript = document.getElementsByTagName("script")[0];
+      firstScript.parentNode?.insertBefore(tag, firstScript);
+
+      // Set up the callback
+      window.onYouTubeIframeAPIReady = () => {
+        createPlayer();
+      };
     }
-  };
+
+    return () => {
+      stopInterval();
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [youtubeVideoId, open]);
 
   // Keep currentKey in sync with selectedKey
   useEffect(() => {
@@ -231,29 +242,11 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
     }
   };
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      stopInterval();
-      if (playerRef.current) {
-        playerRef.current.destroy(); // Safe because destroy exists on YT.Player
-      }
-    };
-  }, []);
-
   // Handle key change from dropdown
   const handleKeyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newKey = e.target.value;
     setSelectedKey(newKey);
     setCurrentKey(newKey);
-  };
-
-  const handleShiftKey = (direction: "up" | "down") => {
-    const idx = keysArray.indexOf(currentKey);
-    let nextIdx = direction === "up" ? idx + 1 : idx - 1;
-    if (nextIdx >= keysArray.length) nextIdx = 0;
-    if (nextIdx < 0) nextIdx = keysArray.length - 1;
-    setCurrentKey(keysArray[nextIdx]);
   };
 
   const transposedLyrics = song.lyrics ? transposeLyrics(song.lyrics, song.originalKey, currentKey) : "";
@@ -306,7 +299,8 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
               <Sparkles className="h-3.5 w-3.5" /> Audio & Lyrics
             </DialogDescription>
           </div>
-          <Button            variant="ghost"
+          <Button
+            variant="ghost"
             size="icon"
             onClick={onClose}
             aria-label="Close dialog"
