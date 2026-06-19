@@ -129,15 +129,19 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
     }
   }, [song.youtubeLink]);
 
-  // Load YouTube IFrame API and create player
+  // Load YouTube IFrame API and create player when video ID changes
   useEffect(() => {
     if (!youtubeVideoId || !open) return;
 
     const createPlayer = () => {
       if (window.YT && containerRef.current) {
+        // Ensure container has size for player to render
+        containerRef.current.style.width = "300px";
+        containerRef.current.style.height = "200px";
+
         playerRef.current = new window.YT.Player(containerRef.current, {
-          height: "0",
-          width: "0",
+          height: "200",
+          width: "300",
           videoId: youtubeVideoId,
           playerVars: {
             autoplay: 0,
@@ -205,7 +209,7 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
         playerRef.current = null;
       }
     };
-  }, [youtubeVideoId, open]);
+  }, [youtubeVideoId, open]); // Add youtubeVideoId to dependencies
 
   // Keep currentKey in sync with selectedKey
   useEffect(() => {
