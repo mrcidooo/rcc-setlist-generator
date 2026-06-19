@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import type { MoveDirection, SetlistSong } from "./types";
 import { transposeLyrics } from "@/utils/transposer";
-import SongPreviewDialog from "@/components/SongPreviewDialog";
+import SetlistSongVideoDialog from "./SetlistSongVideoDialog";
 import { supabase } from "@/lib/supabaseClient";
 
 type SetlistSongListProps = {
@@ -36,37 +36,43 @@ export default function SetlistSongList({
   onMoveSong,
 }: SetlistSongListProps) {
   const [lyricsCache, setLyricsCache] = useState<Record<string, string>>({});
+  const [youtubeLinks, setYoutubeLinks] = useState<Record<string, string>>({});
   const [previewingSong, setPreviewingSong] = useState<{
     title: string;
     originalKey: string;
     lyrics?: string;
+    youtubeLink?: string;
   } | null>(null);
 
-  // Load the full song lyrics dynamically so we can transpose them
+  // Load the full song details (lyrics and youtube link) dynamically so we can transpose them and show video
   useEffect(() => {
-    const fetchAllLyrics = async () => {
+    const fetchAllDetails = async () => {
       const songIds = songs.map(s => s.songId);
       if (songIds.length === 0) return;
 
       const { data, error } = await supabase
         .from("songs")
-        .select("id, lyrics")
+        .select("id, lyrics, youtube_link")
         .in("id", songIds);
 
       if (!error && data) {
-        const cache: Record<string, string> = {};
+        const lyricsCache: Record<string, string> = {};
+        const youtubeLinks: Record<string, string> = {};
         data.forEach((r: any) => {
-          cache[String(r.id)] = r.lyrics || "";
+          lyricsCache[String(r.id)] = r.lyrics || "";
+          youtubeLinks[String(r.id)] = r.youtube_link || "";
         });
-        setLyricsCache(cache);
+        setLyricsCache(lyricsCache);
+        setYoutubeLinks(youtubeLinks);
       }
     };
 
-    fetchAllLyrics();
+    fetchAllDetails();
   }, [songs]);
 
   const handlePreviewTransposed = (songItem: SetlistSong) => {
     const rawLyrics = lyricsCache[songItem.songId] || "";
+    const youtubeLink = youtubeLinks[songItem.songId] || "";
     // Transpose based on comfort key vs original key
     const transposedLyrics = transposeLyrics(
       rawLyrics,
@@ -76,8 +82,9 @@ export default function SetlistSongList({
 
     setPreviewingSong({
       title: `${songItem.songTitle} (${songItem.singerName}'s comfortable key)`,
-      originalKey: songItem.selectedKey,
+      originalKey: songItem.originalKey,
       lyrics: transposedLyrics,
+      youtubeLink: youtubeLink,
     });
   };
 
@@ -105,9 +112,10 @@ export default function SetlistSongList({
                 <div
                   key={songItem.id}
                   className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors"
+                  onClick={() => handlePreviewTransposed(songItem)} // Make the whole row clickable
                 >
                   <div className="flex items-start gap-3">
-                    {/* Glowing step circle */}
+                    {/* Glowing step circle */} 
                     <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[18px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 font-extrabold text-sm border border-indigo-500/15 shadow-inner">
                       {songItem.order}
                     </div>
@@ -142,7 +150,10 @@ export default function SetlistSongList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handlePreviewTransposed(songItem)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent row click when clicking button
+                        handlePreviewTransposed(songItem);
+                      }}
                       className="h-8 rounded-[10px] text-[11px] font-bold text-indigo-500 hover:bg-indigo-500/10"
                     >
                       <Eye className="mr-0.5 h-3.5 w-3.5" />
@@ -151,7 +162,10 @@ export default function SetlistSongList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onMoveSong(songItem.id, "up")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMoveSong(songItem.id, "up");
+                      }}
                       disabled={songItem.order === 1}
                       className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                     >
@@ -161,7 +175,10 @@ export default function SetlistSongList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onMoveSong(songItem.id, "down")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMoveSong(songItem.id, "down");
+                      }}
                       disabled={songItem.order === songs.length}
                       className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                     >
@@ -172,7 +189,10 @@ export default function SetlistSongList({
                       variant="ghost"
                       size="sm"
                       className="h-8 rounded-[10px] text-[11px] font-bold text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                      onClick={() => onRemoveSong(songItem.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveSong(songItem.id);
+                      }}
                     >
                       <Trash2 className="mr-0.5 h-3.5 w-3.5" />
                       Remove
@@ -185,7 +205,7 @@ export default function SetlistSongList({
         </CardContent>
       </Card>
 
-      <SongPreviewDialog
+      <SetlistSongVideoDialog
         song={previewingSong}
         open={previewingSong !== null}
         onClose={() => setPreviewingSong(null)}
