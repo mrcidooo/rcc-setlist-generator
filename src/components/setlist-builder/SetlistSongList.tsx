@@ -19,9 +19,9 @@ type SetlistSongListProps = {
 export default function SetlistSongList({ songs, onRemoveSong, onMoveSong, }: SetlistSongListProps) {
   const [lyricsCache, setLyricsCache] = useState<Record<string, string>>({});
   const [youtubeLinks, setYoutubeLinks] = useState<Record<string, string>>({});
-  const [previewingSong, setPreviewingSong] = useState<{ title: string; originalKey: string; lyrics?: string; youtubeLink?: string; } | null>(null);
+  const [previewingSong, setPreviewingSong] = useState<{ title: string; originalKey: string; selectedKey?: string; singerName?: string; lyrics?: string; youtubeLink?: string; } | null>(null);
 
-  // Load the full song details (lyrics and youtube link) dynamically so we can transpose them and show video
+  // Load the full song details (lyrics and youtube link) dynamically
   useEffect(() => {
     const fetchAllDetails = async () => {
       const songIds = songs.map(s => s.songId);
@@ -47,15 +47,13 @@ export default function SetlistSongList({ songs, onRemoveSong, onMoveSong, }: Se
   const handlePreviewTransposed = (songItem: SetlistSong) => {
     const rawLyrics = lyricsCache[songItem.songId] || "";
     const youtubeLink = youtubeLinks[songItem.songId] || "";
-    const transposedLyrics = transposeLyrics(
-      rawLyrics,
-      songItem.originalKey,
-      songItem.selectedKey
-    );
+    
     setPreviewingSong({
-      title: `${songItem.songTitle} (${songItem.singerName}'s comfortable key)`,
+      title: songItem.songTitle,
       originalKey: songItem.originalKey,
-      lyrics: transposedLyrics,
+      selectedKey: songItem.selectedKey,
+      singerName: songItem.singerName,
+      lyrics: rawLyrics,
       youtubeLink: youtubeLink,
     });
   };

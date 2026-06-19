@@ -20,6 +20,8 @@ import { transposeLyrics } from "@/utils/transposer";
 type SongPreviewData = {
   title: string;
   originalKey: string;
+  selectedKey?: string;
+  singerName?: string;
   lyrics?: string;
   youtubeLink?: string;
 };
@@ -171,11 +173,12 @@ export default function SetlistSongVideoDialog({
 }: SetlistSongVideoDialogProps) {
   const title = song?.title ?? "Song";
   const originalKey = song?.originalKey.trim() || "C";
+  const comfortableKey = song?.selectedKey?.trim() || originalKey;
   const lyrics = song?.lyrics ?? "";
   const youtubeLink = song?.youtubeLink ?? "";
 
-  const [currentKey, setCurrentKey] = useState(originalKey);
-  const [selectedKey, setSelectedKey] = useState(originalKey);
+  const [currentKey, setCurrentKey] = useState(comfortableKey);
+  const [selectedKey, setSelectedKey] = useState(comfortableKey);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -208,9 +211,9 @@ export default function SetlistSongVideoDialog({
   }, [videoId, youtubeLink]);
 
   useEffect(() => {
-    setSelectedKey(originalKey);
-    setCurrentKey(originalKey);
-  }, [originalKey, videoId]);
+    setSelectedKey(comfortableKey);
+    setCurrentKey(comfortableKey);
+  }, [comfortableKey, videoId]);
 
   useEffect(() => {
     if (!videoId || !open) return;
