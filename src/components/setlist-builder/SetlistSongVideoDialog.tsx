@@ -119,11 +119,13 @@ export default function SetlistSongVideoDialog({ songId, song, open, onClose, }:
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Extract YouTube video ID
+  // Extract YouTube video ID when song changes
   useEffect(() => {
     if (song.youtubeLink) {
       const videoId = getYouTubeVideoId(song.youtubeLink);
       setYoutubeVideoId(videoId);
+    } else {
+      setYoutubeVideoId(null);
     }
   }, [song.youtubeLink]);
 
