@@ -187,7 +187,7 @@ export default function SetlistSongVideoDialog({
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+  const intervalRef = useRef<any>(null);
 
   useEffect(() => {
     const nextVideoId = getYouTubeVideoId(youtubeLink);
