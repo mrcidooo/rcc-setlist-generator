@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,6 @@ import type { MoveDirection, SetlistSong } from "./types";
 import { transposeLyrics } from "@/utils/transposer";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
 import { supabase } from "@/lib/supabaseClient";
-import SetlistSongDetailDialog from "./SetlistSongDetailDialog";
 
 type SetlistSongListProps = {
   songs: SetlistSong[];
@@ -42,7 +41,6 @@ export default function SetlistSongList({
     originalKey: string;
     lyrics?: string;
   } | null>(null);
-  const [detailSong, setDetailSong] = useState<SetlistSong | null>(null);
 
   // Load the full song lyrics dynamically so we can transpose them
   useEffect(() => {
@@ -89,7 +87,7 @@ export default function SetlistSongList({
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">Worship Sequence Order</CardTitle>
           <CardDescription>
-            Click a track to open audio playback with transposable lyrics, or use the quick actions to manage the set.
+            Organize track order, view matched keys, and manage items in the set.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -106,8 +104,7 @@ export default function SetlistSongList({
               {songs.map((songItem) => (
                 <div
                   key={songItem.id}
-                  onClick={() => setDetailSong(songItem)}
-                  className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors cursor-pointer"
+                  className="flex flex-col gap-4 rounded-[22px] border border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-indigo-500/5 duration-300 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     {/* Glowing step circle */}
@@ -145,22 +142,16 @@ export default function SetlistSongList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePreviewTransposed(songItem);
-                      }}
+                      onClick={() => handlePreviewTransposed(songItem)}
                       className="h-8 rounded-[10px] text-[11px] font-bold text-indigo-500 hover:bg-indigo-500/10"
                     >
                       <Eye className="mr-0.5 h-3.5 w-3.5" />
-                      Lyrics
+                      Preview
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMoveSong(songItem.id, "up");
-                      }}
+                      onClick={() => onMoveSong(songItem.id, "up")}
                       disabled={songItem.order === 1}
                       className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                     >
@@ -170,10 +161,7 @@ export default function SetlistSongList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMoveSong(songItem.id, "down");
-                      }}
+                      onClick={() => onMoveSong(songItem.id, "down")}
                       disabled={songItem.order === songs.length}
                       className="h-8 rounded-[10px] text-[11px] font-semibold hover:bg-white/50 dark:hover:bg-white/10"
                     >
@@ -184,10 +172,7 @@ export default function SetlistSongList({
                       variant="ghost"
                       size="sm"
                       className="h-8 rounded-[10px] text-[11px] font-bold text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemoveSong(songItem.id);
-                      }}
+                      onClick={() => onRemoveSong(songItem.id)}
                     >
                       <Trash2 className="mr-0.5 h-3.5 w-3.5" />
                       Remove
@@ -205,19 +190,6 @@ export default function SetlistSongList({
         open={previewingSong !== null}
         onClose={() => setPreviewingSong(null)}
       />
-
-      {detailSong && (
-        <SetlistSongDetailDialog
-          open={detailSong !== null}
-          onOpenChange={(open) => {
-            if (!open) setDetailSong(null);
-          }}
-          songId={detailSong.songId}
-          songTitle={detailSong.songTitle}
-          originalKey={detailSong.originalKey}
-          selectedKey={detailSong.selectedKey}
-        />
-      )}
     </>
   );
 }
