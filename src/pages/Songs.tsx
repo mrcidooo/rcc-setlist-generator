@@ -36,7 +36,11 @@ type SongForm = {
   youtubeLink: string;
 };
 
-const mapSong = (record: any): Song => ({
+type SongWithYoutube = Song & {
+  youtubeLink?: string;
+};
+
+const mapSong = (record: any): SongWithYoutube => ({
   id: record.id,
   title: record.title,
   originalKey: record.original_key || record.originalKey || "",
@@ -45,14 +49,15 @@ const mapSong = (record: any): Song => ({
   addedAt: record.created_at || record.added_at || record.addedAt || "",
   notes: record.notes ?? "",
   lyrics: record.lyrics ?? "",
+  youtubeLink: record.youtube_link ?? "",
 });
 
 export default function Songs() {
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [songs, setSongs] = useState<SongWithYoutube[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKey, setSelectedKey] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [editingSong, setEditingSong] = useState<SongWithYoutube | null>(null);
   const { toast } = useToast();
 
   const uploadInitialData = useMemo<Partial<SongForm> | undefined>(() => {
@@ -65,7 +70,7 @@ export default function Songs() {
       tempo: editingSong.tempo ?? "",
       notes: editingSong.notes ?? "",
       lyrics: editingSong.lyrics ?? "",
-      youtubeLink: "",
+      youtubeLink: editingSong.youtubeLink ?? "",
     };
   }, [editingSong]);
 
@@ -82,7 +87,7 @@ export default function Songs() {
     }
     const supabaseSongs = (data ?? []).map(mapSong);
     const stored = localStorage.getItem("uploadedSongs");
-    const uploadedSongs: Song[] = stored ? JSON.parse(stored) : [];
+    const uploadedSongs: SongWithYoutube[] = stored ? JSON.parse(stored) : [];
     setSongs([...uploadedSongs, ...supabaseSongs]);
   };
 
@@ -157,6 +162,7 @@ export default function Songs() {
                 tempo: payload.tempo,
                 notes: payload.notes,
                 lyrics: payload.lyrics,
+                youtubeLink: payload.youtube_link,
               }
             : s,
         ),
@@ -192,16 +198,16 @@ export default function Songs() {
     });
   };
 
-  const handleEditSong = (e: React.MouseEvent, song: Song) => {
+  const handleEditSong = (e: React.MouseEvent, song: SongWithYoutube) => {
     e.stopPropagation();
     setEditingSong(song);
     setIsDialogOpen(true);
   };
 
-  const [previewSong, setPreviewSong] = useState<Song | null>(null);
+  const [previewSong, setPreviewSong] = useState<SongWithYoutube | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const handlePreview = (e: React.MouseEvent, song: Song) => {
+  const handlePreview = (e: React.MouseEvent, song: SongWithYoutube) => {
     e.stopPropagation();
     setPreviewSong(song);
     setIsPreviewOpen(true);
@@ -212,12 +218,12 @@ export default function Songs() {
     setPreviewSong(null);
   };
 
-  const handleRowClick = (song: Song) => {
+  const handleRowClick = (song: SongWithYoutube) => {
     setDetailsSong(song);
     setIsDetailsOpen(true);
   };
 
-  const [detailsSong, setDetailsSong] = useState<Song | null>(null);
+  const [detailsSong, setDetailsSong] = useState<SongWithYoutube | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const closeDetails = () => {
@@ -228,27 +234,17 @@ export default function Songs() {
   return (
     <div className="min-h-screen bg-transparent p-4 pb-32 max-w-5xl mx-auto space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
-              <Music className="h-5 w-5" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Song Library
-            </h1>
+        <div className="flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
+            <Music className="h-5 w-5" />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View tracks, transpose live chords, and manage your church's repertoire list.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Song Library
+          </h1>
         </div>
-
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Upload New Song
-        </Button>
+        <p className="mt-1 text-sm text-muted-foreground">
+          View tracks, transpose live chords, and manage your church's repertoire list.
+        </p>
       </header>
 
       <SongUploadDialog
@@ -356,7 +352,7 @@ export default function Songs() {
                         <div className="font-black text-indigo-500 dark:text-indigo-400 text-sm">{song.originalKey || "C"}</div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-[14px]">
+                      <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-[14px] w-fit">
                         <Button
                           type="button"
                           variant="ghost"
