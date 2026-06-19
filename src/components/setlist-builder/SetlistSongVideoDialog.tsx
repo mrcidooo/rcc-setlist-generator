@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Music, Sliders } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { transposeLyrics } from "@/utils/transposer";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -15,7 +16,7 @@ type SongPreviewData = {
 };
 
 type SetlistSongVideoDialogProps = {
-  songId: string; // ID of the song to preview
+  songId: string;
   song: SongPreviewData | null;
   open: boolean;
   onClose: () => void;
@@ -42,14 +43,8 @@ function getSemitoneDifference(a: string, b: string): number {
   return idxB - idxA;
 }
 
-export default function SetlistSongVideoDialog({
-  songId,
-  song,
-  open,
-  onClose,
-}: SetlistSongVideoDialogProps) {
+export default function SetlistSongVideoDialog({ songId, song, open, onClose, }: SetlistSongVideoDialogProps) {
   if (!song) return null;
-
   const [currentKey, setCurrentKey] = useState<string>(song.originalKey);
   const [selectedKey, setSelectedKey] = useState<string>(song.originalKey);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -100,6 +95,7 @@ export default function SetlistSongVideoDialog({
   };
 
   const transposedLyrics = song.lyrics ? transposeLyrics(song.lyrics, song.originalKey, currentKey) : "";
+
   const formatLyricsWithMarkup = (lyricsText: string) => {
     if (!lyricsText.trim()) {
       return (
@@ -109,7 +105,7 @@ export default function SetlistSongVideoDialog({
       );
     }
     return lyricsText
-      .split("\n")
+      .split("\\n")
       .map((line, idx) => (
         <p key={idx} className="min-h-[1.5rem] leading-relaxed whitespace-pre-wrap font-mono text-sm">
           {line
@@ -117,26 +113,20 @@ export default function SetlistSongVideoDialog({
             .map((part, i) => {
               if (/^\[[^\]]+\]$/.test(part)) {
                 return (
-                  <span
-                    key={i}
-                    className="text-indigo-500 dark:text-indigo-400 font-extrabold text-[12px] bg-indigo-500/10 px-1.5 py-0.5 rounded-[6px] mx-0.5 inline-block"
-                  >
+                  <span key={i} className="text-indigo-500 dark:text-indigo-400 font-extrabold text-[12px] bg-indigo-500/10 px-1.5 py-0.5 rounded-[6px] mx-0.5 inline-block">
                     {part.replace(/[\[\]]/g, "")}
                   </span>
                 );
               }
               if (/^<[^>]+>$/.test(part)) {
                 return (
-                  <span
-                    key={i}
-                    className="text-purple-600 dark:text-purple-300 font-black text-[11px] bg-purple-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider mx-1 inline-block border border-purple-500/10 shadow-[0_0_8px_rgba(168,85,247,0.15)]"
-                  >
+                  <span key={i} className="text-purple-600 dark:text-purple-300 font-black text-[11px] bg-purple-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider mx-1 inline-block border border-purple-500/10 shadow-[0_0_8px_rgba(168,85,247,0.15)]">
                     {part.replace(/[<>]/g, "")}
                   </span>
                 );
               }
               return <React.Fragment key={i}>{part}</React.Fragment>;
-            })
+            })}
         </p>
       ));
   };
@@ -151,8 +141,7 @@ export default function SetlistSongVideoDialog({
               {song.title}
             </DialogTitle>
             <DialogDescription className="text-xs font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              Audio & Lyrics
+              <Sparkles className="h-3.5 w-3.5" /> Audio & Lyrics
             </DialogDescription>
           </div>
           <Button
@@ -171,8 +160,7 @@ export default function SetlistSongVideoDialog({
           <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 p-3 rounded-[20px]">
             <div>
               <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
-                <Sliders className="h-3.5 w-3.5" />
-                Performance Key
+                <Sliders className="h-3.5 w-3.5" /> Performance Key
               </span>
               <div className="text-lg font-black text-foreground mt-1">Key of {currentKey}</div>
               <div className="text-xs text-muted-foreground mt-0.5">
