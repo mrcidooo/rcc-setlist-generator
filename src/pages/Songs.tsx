@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Plus, Search, Sparkles, Play, Edit2, Trash2, Eye } from "lucide-react";
+import { Music, Plus, Search, Sparkles, Play, Edit2, Trash2, Eye, Download } from "lucide-react";
 import { type Song } from "@/components/SongCard";
 import { supabase } from "@/lib/supabaseClient";
 import SongPreviewDialog from "@/components/SongPreviewDialog";
@@ -247,6 +247,16 @@ export default function Songs() {
         </p>
       </header>
 
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setIsDialogOpen(true)}
+          className="h-11 rounded-[18px] bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.35)] font-bold px-6"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add New Song
+        </Button>
+      </div>
+
       <SongUploadDialog
         key={editingSong?.id ?? "new-song"}
         open={isDialogOpen}
@@ -265,7 +275,7 @@ export default function Songs() {
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">Worship Playlists</CardTitle>
           <CardDescription>
-            Click any track row to open full live performance views and real‑time transpose controls in an elegant overlay.
+            Click tracks below to open full live performance views and real‑time transpose controls.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
